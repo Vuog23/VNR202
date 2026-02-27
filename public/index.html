@@ -267,10 +267,9 @@ canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
 
 <script>
 // ============================================================
-// CONFIG
+// CONFIG — KHÔNG còn API key ở đây, đã chuyển lên server
 // ============================================================
-const GROQ_API_KEY = 'YOUR_GROQ_API_KEY_HERE';
-const GROQ_MODEL   = 'llama3-70b-8192';
+const GROQ_MODEL = 'llama3-70b-8192';
 
 // ============================================================
 // FULLSCREEN SCALE
@@ -280,8 +279,7 @@ const wrapper = document.getElementById('gameWrapper');
 const CW = 900, CH = 480;
 
 function resizeCanvas() {
-  const ww = wrapper.clientWidth;
-  const wh = wrapper.clientHeight;
+  const ww = wrapper.clientWidth, wh = wrapper.clientHeight;
   const scale = Math.min(ww / CW, wh / CH);
   canvas.style.width  = (CW * scale) + 'px';
   canvas.style.height = (CH * scale) + 'px';
@@ -379,6 +377,7 @@ const PERIODS=[
   {id:'phuchoi',label:'1932–1935',prompt:'Tập trung vào Lê Hồng Phong, Chương trình hành động 1932, phục hồi tổ chức, Đại hội I Ma Cao.',welcome:'## 1932–1935: Gian khổ Phục hồi\n- 📋 Chương trình hành động Lê Hồng Phong (1932)\n- 📚 Hà Huy Tập: Sơ thảo lịch sử (3/1933)\n- 🎯 Đại hội Đảng I – Ma Cao (3/1935)\n- ⚠️ Hạn chế: chưa đặt giải phóng dân tộc lên đầu',quickPrompts:['Đại hội I có gì đặc biệt?','Ba nhiệm vụ Đại hội I','Hạn chế của Đại hội I','Lê Hồng Phong là ai?']},
   {id:'danchuvinh',label:'1936–1939',prompt:'Tập trung vào Đại hội VII QTCS, Mặt trận Dân chủ, chiến sách mới, Nguyễn Văn Cừ, Tự chỉ trích.',welcome:'## 1936–1939: Phong trào Dân chủ\n- 🌍 Đại hội VII QTCS – chống phát xít\n- 📰 Báo chí, sách chính trị công khai\n- 🤝 Mặt trận Dân chủ Đông Dương (3/1938)\n- ✍️ Tự chỉ trích – Nguyễn Văn Cừ (1939)',quickPrompts:['Tại sao 1936–1939 là bước ngoặt?','Mặt trận Dân chủ là gì?','Điền địa vs phản đế thay đổi thế nào?','Nguyễn Văn Cừ và Tự chỉ trích']},
 ];
+
 const SYSTEM_BASE=`Bạn là chuyên gia lịch sử về Đảng Cộng sản Việt Nam giai đoạn 1929–1939. Trả lời chính xác theo sự kiện lịch sử, hoàn toàn bằng tiếng Việt, có cấu trúc rõ ràng. Dùng markdown: ## tiêu đề, **in đậm** cho sự kiện/mốc quan trọng, *in nghiêng* cho trích dẫn, > blockquote cho câu nói nổi tiếng. Cuối mỗi câu trả lời gợi mở 1–2 câu hỏi liên quan.`;
 
 // ============================================================
@@ -912,7 +911,9 @@ function renderQuizResult(){
 
 document.getElementById('btnOpenChat').onclick=()=>{document.getElementById('victoryOverlay').classList.remove('show');openChatArea();};
 
-// CHAT
+// ============================================================
+// CHAT — gọi qua /api/chat proxy, KHÔNG dùng API key trực tiếp
+// ============================================================
 function openChatArea(){
   if(document.getElementById('chatOverlay').classList.contains('show'))return;
   paused=true;
@@ -968,34 +969,54 @@ function timeStr(){const d=new Date();return`${d.getHours().toString().padStart(
 async function sendChat(){
   const msg=document.getElementById('chatInput').value.trim();
   if(!msg||document.getElementById('sendBtn').disabled)return;
-  document.getElementById('chatInput').value='';document.getElementById('sendBtn').disabled=true;
+  document.getElementById('chatInput').value='';
+  document.getElementById('sendBtn').disabled=true;
+
   const period=PERIODS.find(p=>p.id===activePeriod);
+
   const uEl=document.createElement('div');uEl.className='msg user';
   uEl.innerHTML=msg.replace(/</g,'&lt;')+`<div class="msg-time">${timeStr()}</div>`;
   document.getElementById('chatMessages').appendChild(uEl);
   chatHistory.push({role:'user',content:msg});
+
   const botEl=document.createElement('div');botEl.className='msg bot';
   botEl.innerHTML='<div class="typing-dots"><span></span><span></span><span></span></div>';
   document.getElementById('chatMessages').appendChild(botEl);
   document.getElementById('chatMessages').scrollTop=99999;
+
   try{
     const sysPrompt=`${SYSTEM_BASE}\nGiai đoạn đang thảo luận: ${period.label}.\n${period.prompt}`;
-    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
-      headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_API_KEY},
-      body:JSON.stringify({model:GROQ_MODEL,messages:[{role:'system',content:sysPrompt},...chatHistory.slice(-14)],max_tokens:1400,temperature:0.6})});
+
+    // ✅ Gọi qua Vercel serverless proxy — API key an toàn trên server
+    const res=await fetch('/api/chat',{
+      method:'POST',
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({
+        model:GROQ_MODEL,
+        messages:[{role:'system',content:sysPrompt},...chatHistory.slice(-14)],
+        max_tokens:1400,
+        temperature:0.6
+      })
+    });
+
     const data=await res.json();
-    if(data.error)throw new Error(data.error.message);
+    if(data.error)throw new Error(typeof data.error==='object'?data.error.message:data.error);
+
     const reply=data.choices[0].message.content;
     chatHistory.push({role:'assistant',content:reply});
     botEl.innerHTML=`<div class="msg-era-tag">${period.label}</div><br>${renderMD(reply)}<div class="msg-time">${timeStr()} · AI</div>`;
   }catch(err){
-    botEl.innerHTML=`<span style="color:#ff7777">❌ Groq API lỗi: <code>${err.message}</code></span>`;
+    botEl.innerHTML=`<span style="color:#ff7777">❌ Lỗi: <code>${err.message}</code></span>`;
   }
+
   document.getElementById('sendBtn').disabled=false;
   document.getElementById('chatMessages').scrollTop=99999;
 }
+
 document.getElementById('sendBtn').onclick=sendChat;
-document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
+document.getElementById('chatInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}
+});
 
 // Mobile
 if('ontouchstart' in window){
