@@ -1,0 +1,1013 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Super Mario – Lịch Sử Đảng CSVN</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Be+Vietnam+Pro:ital,wght@0,400;0,600;0,700;1,400&display=swap');
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--red:#B22222;--rd:#7a1111;--rl:#d43030;--gold:#FFD700;--gd:#cc9900;--gl:#ffe566;--bg:#0d0500}
+html,body{width:100%;height:100%;background:#000;overflow:hidden}
+body{display:flex;flex-direction:column;font-family:'Be Vietnam Pro',sans-serif}
+
+/* HUD */
+#hud{width:100%;background:linear-gradient(180deg,#8a0000,var(--red) 60%,#900);border-bottom:3px solid var(--gold);padding:7px 16px;display:flex;align-items:center;justify-content:space-between;box-shadow:0 3px 12px rgba(0,0,0,.5);flex-wrap:wrap;gap:4px;flex-shrink:0}
+.hud-left{display:flex;align-items:center;gap:10px}
+.hud-star{font-size:16px;animation:spin 4s linear infinite}
+@keyframes spin{0%{transform:rotateY(0)}50%{transform:rotateY(180deg)}100%{transform:rotateY(360deg)}}
+.hud-title{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:7px;text-shadow:1px 1px 0 #000,0 0 8px #ffaa00}
+.hud-right{display:flex;align-items:center;gap:12px}
+.progress-wrap{display:flex;align-items:center;gap:6px}
+.progress-bar-bg{width:140px;height:12px;background:var(--rd);border:2px solid var(--gold);border-radius:2px;overflow:hidden;position:relative}
+.progress-bar-fill{height:100%;background:linear-gradient(90deg,#ffaa00,var(--gold),#ffee88);transition:width .5s;box-shadow:0 0 8px var(--gold)}
+.progress-bar-bg::after{content:'';position:absolute;inset:0;background:repeating-linear-gradient(90deg,transparent 0,transparent 10px,rgba(0,0,0,.12) 10px,rgba(0,0,0,.12) 11px)}
+.progress-txt{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:7px;min-width:44px;text-align:right}
+.score-display{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:8px;text-shadow:0 0 8px var(--gold)}
+
+#gameWrapper{position:relative;flex:1;display:flex;align-items:center;justify-content:center;background:#000;overflow:hidden}
+canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
+
+#hintBar{width:100%;background:rgba(0,0,0,.6);border-top:1px solid #FFD70044;padding:4px 0;text-align:center;font-family:'Press Start 2P',monospace;font-size:6px;color:#FFD70099;letter-spacing:.5px;flex-shrink:0}
+
+/* MODAL */
+#modal{display:none;position:fixed;inset:0;background:rgba(0,0,0,.82);z-index:100;align-items:center;justify-content:center;backdrop-filter:blur(3px)}
+#modal.show{display:flex}
+.modal-box{background:linear-gradient(160deg,#1a0800,#0d0300);border:3px solid var(--gold);border-radius:6px;max-width:640px;width:94%;max-height:84vh;display:flex;flex-direction:column;box-shadow:0 0 40px #FFD70055;animation:mIn .18s ease}
+@keyframes mIn{from{transform:scale(.92);opacity:0}to{transform:scale(1);opacity:1}}
+.modal-header{background:linear-gradient(90deg,#8a0000,var(--red),#8a0000);padding:12px 18px;display:flex;align-items:center;justify-content:space-between;border-bottom:2px solid var(--gold);border-radius:4px 4px 0 0;flex-shrink:0}
+.modal-era{font-size:10px;color:#FFD70099;font-style:italic;margin-top:2px}
+.modal-title{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:11px;text-shadow:0 0 10px #ffaa00}
+.modal-badge{background:var(--gold);color:var(--rd);font-family:'Press Start 2P',monospace;font-size:7px;padding:3px 7px;border-radius:2px}
+.modal-body{padding:20px 22px;overflow-y:auto;flex:1;color:#f0e0c0;line-height:1.9;font-size:15px;scrollbar-width:thin;scrollbar-color:var(--gold) #2a1000}
+.modal-body::-webkit-scrollbar{width:5px}
+.modal-body::-webkit-scrollbar-thumb{background:var(--gold);border-radius:3px}
+.modal-footer{padding:10px 18px 12px;border-top:1px solid #FFD70033;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.footer-hint{font-family:'Press Start 2P',monospace;color:#FFD70077;font-size:7px;animation:blink 1.2s infinite}
+@keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
+.btn-continue{font-family:'Press Start 2P',monospace;background:linear-gradient(180deg,var(--rl),var(--red));color:var(--gold);border:2px solid var(--gold);padding:9px 18px;font-size:9px;cursor:pointer;border-radius:3px;box-shadow:0 3px 0 var(--rd);transition:all .1s}
+.btn-continue:hover{background:var(--gold);color:var(--rd)}
+.btn-continue:active{transform:translateY(2px)}
+
+/* TIMELINE OVERLAY */
+#timelineOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.92);z-index:145;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#timelineOverlay.show{display:flex}
+.timeline-box{background:linear-gradient(160deg,#1a0800,#080200);border:3px solid var(--gold);border-radius:8px;max-width:720px;width:95%;max-height:90vh;display:flex;flex-direction:column;box-shadow:0 0 50px #FFD70044;animation:mIn .25s ease}
+.timeline-header{background:linear-gradient(90deg,#7a0000,var(--red),#7a0000);padding:14px 20px;border-bottom:2px solid var(--gold);border-radius:6px 6px 0 0;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.timeline-title{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:10px}
+.timeline-body{padding:16px 20px;overflow-y:auto;flex:1;scrollbar-width:thin;scrollbar-color:var(--gold) #1a0800}
+.tl-period{margin-bottom:20px}
+.tl-period-title{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:8px;margin-bottom:10px;padding:6px 10px;background:rgba(255,215,0,.08);border-left:3px solid var(--gold)}
+.tl-item{display:flex;gap:10px;margin-bottom:8px;align-items:flex-start}
+.tl-dot{width:10px;height:10px;background:var(--gold);border-radius:50%;flex-shrink:0;margin-top:5px}
+.tl-text{color:#f0e0c0;font-size:13px;line-height:1.6}
+.tl-date{color:var(--gold);font-weight:700;font-size:12px}
+.timeline-footer{padding:12px 20px;border-top:1px solid #FFD70022;display:flex;justify-content:flex-end;gap:10px;flex-shrink:0}
+.btn-tl{font-family:'Press Start 2P',monospace;padding:9px 16px;font-size:8px;cursor:pointer;border-radius:3px;transition:all .1s}
+.btn-tl.gold{background:var(--gold);color:var(--rd);border:2px solid var(--gd)}
+.btn-tl.gold:hover{background:var(--gl)}
+.btn-tl.outline{background:transparent;color:var(--gold);border:2px solid var(--gold)}
+.btn-tl.outline:hover{background:var(--gold);color:var(--rd)}
+
+/* QUIZ */
+#quizOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.9);z-index:160;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#quizOverlay.show{display:flex}
+.quiz-box{background:linear-gradient(160deg,#1a0800,#080200);border:3px solid var(--gold);border-radius:8px;max-width:680px;width:95%;display:flex;flex-direction:column;box-shadow:0 0 50px #FFD70044;animation:mIn .2s ease;overflow:hidden}
+.quiz-header{background:linear-gradient(90deg,#6a0000,var(--red),#6a0000);padding:12px 18px;border-bottom:2px solid var(--gold);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.quiz-title{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:9px}
+.quiz-progress{font-family:'Press Start 2P',monospace;color:#FFD70099;font-size:7px}
+.quiz-body{padding:20px 22px}
+.quiz-q{color:#f0e0c0;font-size:15px;line-height:1.7;margin-bottom:18px;min-height:60px}
+.quiz-q strong{color:var(--gold)}
+.quiz-opts{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.quiz-opt{background:rgba(255,215,0,.06);border:2px solid #FFD70044;color:#f0e0c0;padding:12px 14px;border-radius:4px;cursor:pointer;font-size:13px;line-height:1.5;text-align:left;transition:all .15s;font-family:'Be Vietnam Pro',sans-serif}
+.quiz-opt:hover:not(:disabled){background:rgba(255,215,0,.15);border-color:var(--gold);color:var(--gold)}
+.quiz-opt.correct{background:rgba(0,180,80,.2);border-color:#00cc55;color:#88ffaa}
+.quiz-opt.wrong{background:rgba(200,0,0,.2);border-color:#cc3333;color:#ffaaaa}
+.quiz-opt:disabled{cursor:default}
+.quiz-explanation{background:rgba(255,215,0,.06);border-left:3px solid var(--gold);padding:10px 14px;margin-top:14px;color:#f0d090;font-size:13px;line-height:1.6;border-radius:0 4px 4px 0;display:none}
+.quiz-explanation.show{display:block}
+.quiz-footer{padding:12px 22px 16px;display:flex;align-items:center;justify-content:space-between;border-top:1px solid #FFD70022}
+.quiz-score-txt{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:8px}
+.btn-quiz-next{font-family:'Press Start 2P',monospace;background:linear-gradient(180deg,var(--rl),var(--red));color:var(--gold);border:2px solid var(--gold);padding:9px 16px;font-size:8px;cursor:pointer;border-radius:3px;box-shadow:0 2px 0 var(--rd);transition:all .1s}
+.btn-quiz-next:hover{background:var(--gold);color:var(--rd)}
+.quiz-result{padding:24px 22px;text-align:center}
+.quiz-result-score{font-family:'Press Start 2P',monospace;font-size:28px;color:var(--gold);text-shadow:0 0 20px var(--gold);margin-bottom:10px}
+.quiz-result-msg{color:#f0e0c0;font-size:15px;line-height:1.7;margin-bottom:18px}
+.quiz-medals{font-size:32px;margin-bottom:12px}
+.quiz-result-buttons{display:flex;gap:10px;justify-content:center;flex-wrap:wrap}
+
+/* VICTORY */
+#victoryOverlay{display:none;position:fixed;inset:0;background:radial-gradient(ellipse at center,#2a0000,#0d0000);z-index:150;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+#victoryOverlay.show{display:flex}
+.v-stars{font-size:40px;letter-spacing:8px;animation:starPop .6s ease}
+@keyframes starPop{from{transform:scale(0) rotate(-30deg)}to{transform:scale(1) rotate(0)}}
+.victory-title{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:18px;text-align:center;text-shadow:0 0 30px var(--gold),0 0 60px #ff8800;animation:pulse 1.2s infinite alternate}
+@keyframes pulse{from{opacity:.75;transform:scale(.98)}to{opacity:1;transform:scale(1)}}
+.victory-sub{color:#f0d0a0;font-size:15px;text-align:center;line-height:1.7}
+.v-buttons{display:flex;gap:12px;flex-wrap:wrap;justify-content:center;margin-top:8px}
+.btn-v{font-family:'Press Start 2P',monospace;border:3px solid var(--gold);padding:12px 20px;font-size:9px;cursor:pointer;border-radius:4px;transition:all .1s}
+.btn-v.primary{background:linear-gradient(180deg,var(--rl),var(--rd));color:var(--gold);box-shadow:0 4px 0 #550000,0 0 20px #FFD70055}
+.btn-v.primary:hover{background:var(--gold);color:var(--rd)}
+.btn-v.secondary{background:rgba(255,215,0,.1);color:var(--gold)}
+.btn-v.secondary:hover{background:var(--gold);color:var(--rd)}
+
+/* CHAT */
+#chatOverlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);z-index:200;align-items:center;justify-content:center;backdrop-filter:blur(4px)}
+#chatOverlay.show{display:flex}
+.chat-box{background:linear-gradient(160deg,#140800,#0a0200);border:3px solid var(--gold);border-radius:8px;width:min(720px,96vw);height:min(680px,94vh);display:flex;flex-direction:column;box-shadow:0 0 60px #FFD70044;animation:mIn .2s ease}
+.chat-header{background:linear-gradient(90deg,#5a0000,var(--red),#5a0000);padding:0;border-bottom:2px solid var(--gold);border-radius:5px 5px 0 0;flex-shrink:0}
+.chat-header-top{padding:12px 16px;display:flex;align-items:center;justify-content:space-between}
+.chat-header-left{display:flex;align-items:center;gap:10px}
+.chat-avatar{width:36px;height:36px;background:var(--gold);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.chat-header-title{font-family:'Press Start 2P',monospace;color:var(--gold);font-size:7px;line-height:1.6}
+.chat-header-sub{font-size:11px;color:#FFD70099;margin-top:2px}
+.chat-tabs{display:flex;overflow-x:auto;border-top:1px solid #FFD70033;scrollbar-width:none;padding:0 10px;gap:4px}
+.chat-tabs::-webkit-scrollbar{display:none}
+.chat-tab{font-family:'Press Start 2P',monospace;font-size:6px;color:#FFD70077;background:none;border:none;border-bottom:2px solid transparent;padding:7px 10px;cursor:pointer;white-space:nowrap;transition:all .15s;flex-shrink:0}
+.chat-tab:hover{color:var(--gold)}
+.chat-tab.active{color:var(--gold);border-bottom-color:var(--gold)}
+.chat-close{background:none;border:2px solid var(--gold);color:var(--gold);cursor:pointer;font-family:'Press Start 2P',monospace;font-size:8px;padding:5px 9px;border-radius:3px;transition:all .1s;flex-shrink:0}
+.chat-close:hover{background:var(--gold);color:var(--rd)}
+#chatMessages{flex:1;overflow-y:auto;padding:16px;display:flex;flex-direction:column;gap:12px;scrollbar-width:thin;scrollbar-color:var(--gd) #1a0800}
+#chatMessages::-webkit-scrollbar{width:4px}
+#chatMessages::-webkit-scrollbar-thumb{background:var(--gd);border-radius:3px}
+.msg{max-width:84%;padding:11px 15px;border-radius:6px;font-size:14px;line-height:1.75;word-break:break-word}
+.msg.user{background:linear-gradient(135deg,var(--red),var(--rd));color:#fff;align-self:flex-end;border:1px solid var(--gd);border-radius:6px 6px 2px 6px}
+.msg.bot{background:linear-gradient(135deg,#221000,#150800);color:#f0e0c0;align-self:flex-start;border:1px solid #FFD70055;border-radius:6px 6px 6px 2px}
+.msg.bot h2,.msg.bot h3{color:var(--gold);margin:8px 0 4px;font-size:14px}
+.msg.bot ul,.msg.bot ol{padding-left:20px;margin:5px 0}
+.msg.bot li{margin-bottom:3px}
+.msg.bot code{background:#3a1800;padding:1px 5px;border-radius:3px;font-size:12px;color:var(--gold)}
+.msg.bot strong{color:var(--gl)}
+.msg.bot em{color:#ffc080}
+.msg.bot blockquote{border-left:3px solid var(--gold);padding-left:10px;margin:6px 0;color:#ffd080;font-style:italic}
+.msg-time{font-size:10px;opacity:.45;margin-top:5px;text-align:right}
+.msg-era-tag{display:inline-block;background:var(--gold);color:var(--rd);font-size:9px;font-weight:700;padding:1px 6px;border-radius:2px;margin-bottom:6px}
+.typing-dots{display:inline-flex;gap:4px;align-items:center;padding:4px 0}
+.typing-dots span{width:7px;height:7px;background:var(--gold);border-radius:50%;animation:td 1.2s infinite}
+.typing-dots span:nth-child(2){animation-delay:.2s}.typing-dots span:nth-child(3){animation-delay:.4s}
+@keyframes td{0%,80%,100%{transform:scale(.6);opacity:.4}40%{transform:scale(1);opacity:1}}
+.quick-prompts{padding:8px 14px;display:flex;gap:6px;flex-wrap:wrap;border-top:1px solid #FFD70022;flex-shrink:0}
+.qp-btn{font-size:11px;background:rgba(255,215,0,.08);border:1px solid #FFD70044;color:#FFD70099;padding:4px 10px;border-radius:12px;cursor:pointer;transition:all .15s;white-space:nowrap}
+.qp-btn:hover{background:rgba(255,215,0,.2);color:var(--gold);border-color:var(--gold)}
+.chat-input-row{display:flex;gap:9px;padding:10px 14px 12px;border-top:1px solid #FFD70033;flex-shrink:0}
+#chatInput{flex:1;background:#1a0a00;border:2px solid #FFD70066;color:#f0e0c0;padding:10px 13px;border-radius:4px;font-family:'Be Vietnam Pro',sans-serif;font-size:14px;resize:none;height:44px;transition:border-color .2s}
+#chatInput:focus{outline:none;border-color:var(--gold);box-shadow:0 0 8px #FFD70033}
+#chatInput::placeholder{color:#FFD70044}
+#sendBtn{background:linear-gradient(180deg,var(--rl),var(--red));border:2px solid var(--gold);color:var(--gold);font-family:'Press Start 2P',monospace;font-size:8px;padding:0 14px;cursor:pointer;border-radius:4px;box-shadow:0 2px 0 var(--rd);min-width:60px;transition:all .1s}
+#sendBtn:hover{background:var(--gold);color:var(--rd)}
+#sendBtn:disabled{opacity:.4;cursor:not-allowed}
+.chat-footer-note{text-align:center;padding:5px;font-family:'Press Start 2P',monospace;font-size:6px;color:#FFD70033;flex-shrink:0}
+
+/* SCORE POPUP */
+.score-popup{position:fixed;font-family:'Press Start 2P',monospace;font-size:14px;color:var(--gold);pointer-events:none;z-index:90;text-shadow:0 0 10px var(--gold);animation:scoreFloat 1.2s ease forwards}
+@keyframes scoreFloat{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-60px)}}
+</style>
+</head>
+<body>
+
+<div id="hud">
+  <div class="hud-left">
+    <div class="hud-star">⭐</div>
+    <div class="hud-title">LỊCH SỬ ĐẢNG CSVN</div>
+  </div>
+  <div class="hud-right">
+    <div class="score-display">⭐ <span id="scoreDisplay">0</span></div>
+    <div class="progress-wrap">
+      <div class="progress-bar-bg"><div class="progress-bar-fill" id="progressFill" style="width:0%"></div></div>
+      <div class="progress-txt" id="progressTxt">0 / 56</div>
+    </div>
+  </div>
+</div>
+<div id="gameWrapper">
+  <canvas id="gameCanvas" width="900" height="480"></canvas>
+</div>
+<div id="hintBar">← → / A D : DI CHUYỂN &nbsp;|&nbsp; SPACE / ↑ : NHẢY &nbsp;|&nbsp; NHẢY ĐẬP VÀO Ô ? ĐỂ ĐỌC &nbsp;|&nbsp; ENTER : ĐÓNG HỘP</div>
+
+<!-- Box Modal -->
+<div id="modal">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div><div class="modal-title" id="modalTitle">BOX 1</div><div class="modal-era" id="modalEra"></div></div>
+      <div class="modal-badge" id="modalBadge">1 / 56</div>
+    </div>
+    <div class="modal-body" id="modalBody"></div>
+    <div class="modal-footer">
+      <div class="footer-hint">[ ENTER ] TIẾP TỤC</div>
+      <button class="btn-continue" id="btnContinue">✓ TIẾP TỤC</button>
+    </div>
+  </div>
+</div>
+
+<!-- Timeline -->
+<div id="timelineOverlay">
+  <div class="timeline-box">
+    <div class="timeline-header">
+      <div class="timeline-title">📅 BẢNG TÓM TẮT LỊCH SỬ 1929–1939</div>
+      <button class="btn-tl outline" id="btnCloseTimeline">✕</button>
+    </div>
+    <div class="timeline-body" id="timelineBody"></div>
+    <div class="timeline-footer">
+      <button class="btn-tl outline" id="btnTimelineToQuiz">📝 LÀM BÀI ÔN TẬP</button>
+      <button class="btn-tl gold" id="btnTimelineToChat">🤖 VÀO AI CHAT</button>
+    </div>
+  </div>
+</div>
+
+<!-- Quiz -->
+<div id="quizOverlay">
+  <div class="quiz-box" id="quizBox">
+    <div class="quiz-header">
+      <div class="quiz-title">📝 ÔN TẬP LỊCH SỬ</div>
+      <div class="quiz-progress" id="quizProgress">Câu 1 / 10</div>
+    </div>
+    <div id="quizContent"></div>
+  </div>
+</div>
+
+<!-- Victory -->
+<div id="victoryOverlay">
+  <div class="v-stars">⭐⭐⭐⭐⭐</div>
+  <div class="victory-title">HOÀN THÀNH 56 BOX!</div>
+  <div class="victory-sub">Điểm số: <strong style="color:#FFD700" id="victoryScore">0</strong> điểm<br>Bạn đã học xong <strong style="color:#FFD700">Lịch sử Đảng CSVN 1929–1939</strong></div>
+  <div class="v-buttons">
+    <button class="btn-v secondary" id="btnShowTimeline">📅 XEM TIMELINE</button>
+    <button class="btn-v secondary" id="btnStartQuiz">📝 ÔN TẬP (10 CÂU)</button>
+    <button class="btn-v primary"   id="btnOpenChat">🤖 VÀO AI CHAT</button>
+    <button class="btn-v secondary" id="btnRestart">↺ CHƠI LẠI</button>
+  </div>
+</div>
+
+<!-- Chat -->
+<div id="chatOverlay">
+  <div class="chat-box">
+    <div class="chat-header">
+      <div class="chat-header-top">
+        <div class="chat-header-left">
+          <div class="chat-avatar">📜</div>
+          <div>
+            <div class="chat-header-title">TRUNG TÂM THẢO LUẬN LỊCH SỬ</div>
+            <div class="chat-header-sub">Lịch sử Đảng CSVN 1929–1939 · Groq llama3-70b</div>
+          </div>
+        </div>
+        <button class="chat-close" id="chatCloseBtn">✕ ĐÓNG</button>
+      </div>
+      <div class="chat-tabs" id="chatTabs"></div>
+    </div>
+    <div id="chatMessages"></div>
+    <div class="quick-prompts" id="quickPrompts"></div>
+    <div class="chat-input-row">
+      <textarea id="chatInput" placeholder="Đặt câu hỏi về lịch sử..."></textarea>
+      <button id="sendBtn">GỬI</button>
+    </div>
+    <div class="chat-footer-note">ENTER gửi · SHIFT+ENTER xuống dòng · Groq llama3-70b-8192</div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// CONFIG
+// ============================================================
+const GROQ_API_KEY = 'YOUR_GROQ_API_KEY_HERE';
+const GROQ_MODEL   = 'llama3-70b-8192';
+
+// ============================================================
+// FULLSCREEN SCALE
+// ============================================================
+const canvas = document.getElementById('gameCanvas');
+const wrapper = document.getElementById('gameWrapper');
+const CW = 900, CH = 480;
+
+function resizeCanvas() {
+  const ww = wrapper.clientWidth;
+  const wh = wrapper.clientHeight;
+  const scale = Math.min(ww / CW, wh / CH);
+  canvas.style.width  = (CW * scale) + 'px';
+  canvas.style.height = (CH * scale) + 'px';
+}
+window.addEventListener('resize', resizeCanvas);
+resizeCanvas();
+
+// ============================================================
+// TIMELINE DATA
+// ============================================================
+const TIMELINE_PERIODS = [
+  { title:'1929–1930 · Khủng hoảng & Bùng nổ', items:[
+    {date:'1929–1933',text:'Khủng hoảng kinh tế thế giới — tư bản lao đao, phong trào cách mạng toàn cầu dâng cao'},
+    {date:'2/1930',text:'Khởi nghĩa Yên Bái bị đàn áp — Pháp tăng cường bóc lột Đông Dương'},
+    {date:'1–4/1930',text:'Bãi công công nhân liên tiếp: xi măng Hải Phòng, Phú Riềng, dệt Nam Định...'},
+    {date:'5/1930',text:'Quốc tế Lao động: 16 bãi công, 34 biểu tình nông dân'},
+    {date:'6–8/1930',text:'121 cuộc đấu tranh — tổng bãi công Bến Thủy–Vinh'},
+    {date:'12/9/1930',text:'Biểu tình Hưng Nguyên: máy bay Pháp ném bom, 171 người thiệt mạng'},
+  ]},
+  { title:'10/1930–1931 · Hội nghị TW & Đàn áp', items:[
+    {date:'14–31/10/1930',text:'Hội nghị TW I tại Hương Cảng: đổi tên Đảng → Đảng Cộng sản Đông Dương; Trần Phú làm Tổng Bí thư'},
+    {date:'10/1930',text:'Luận cương chính trị Trần Phú — xác định chiến lược cách mạng'},
+    {date:'18/11/1930',text:'Chỉ thị thành lập Hội Phản đế Đồng minh — mặt trận đầu tiên'},
+    {date:'11/4/1931',text:'Quốc tế Cộng sản công nhận Đảng Cộng sản Đông Dương là chi bộ độc lập'},
+    {date:'18/4/1931',text:'Trần Phú bị bắt tại Sài Gòn'},
+    {date:'4/1931',text:'Toàn bộ Ban Chấp hành TW bị bắt — tổ chức tan rã hầu hết'},
+    {date:'6/6/1931',text:'Nguyễn Ái Quốc bị chính quyền Anh bắt tại Hồng Kông'},
+    {date:'6/9/1931',text:'Trần Phú hy sinh: "Hãy giữ vững chí khí chiến đấu!"'},
+  ]},
+  { title:'1932–1935 · Phục hồi Tổ chức', items:[
+    {date:'Đầu 1932',text:'Lê Hồng Phong công bố Chương trình hành động — khởi động phục hồi'},
+    {date:'15/6/1932',text:'Chương trình hành động: "gây dựng đoàn thể bí mật vững như sắt đồng"'},
+    {date:'3/1933',text:'Hà Huy Tập viết Sơ thảo lịch sử phong trào cộng sản Đông Dương'},
+    {date:'5/1933',text:'Tòa Đại hình Sài Gòn xét xử 120 chiến sĩ, đày ra Côn Đảo'},
+    {date:'Đầu 1934',text:'Nguyễn Ái Quốc ra tù, trở lại Quốc tế Cộng sản (Mátxcơva)'},
+    {date:'Đầu 1934',text:'Ban Chỉ huy ở ngoài được thành lập'},
+    {date:'3/1935',text:'Đại hội Đảng I tại Ma Cao: Lê Hồng Phong làm TBT, 3 nhiệm vụ trước mắt'},
+  ]},
+  { title:'1935–1939 · Phong trào Dân chủ', items:[
+    {date:'7/1935',text:'Đại hội VII Quốc tế Cộng sản: xác định chống phát xít là nhiệm vụ hàng đầu'},
+    {date:'1936',text:'Mặt trận Nhân dân Pháp thắng cử — tạo điều kiện thuận lợi cho Đông Dương'},
+    {date:'26/7/1936',text:'Hội nghị TW tại Thượng Hải: "sửa chữa sai lầm, định lại chính sách mới"'},
+    {date:'10/1936',text:'Văn kiện "Chiến sách mới": ưu tiên phản đế trước điền địa'},
+    {date:'8/1936',text:'Hà Huy Tập làm Tổng Bí thư (đến 3/1938)'},
+    {date:'1936',text:'600 Ủy ban hành động ở Nam Kỳ; phong trào Đông Dương Đại hội'},
+    {date:'3/1938',text:'Hội nghị TW: lập Mặt trận Dân chủ Đông Dương; Nguyễn Văn Cừ làm TBT'},
+    {date:'1939',text:'Nguyễn Văn Cừ xuất bản Tự chỉ trích'},
+    {date:'9/1939',text:'Chiến tranh TG2 bùng nổ — Đảng rút vào bí mật, kết thúc giai đoạn dân chủ'},
+  ]},
+];
+
+// ============================================================
+// QUIZ QUESTIONS
+// ============================================================
+const ALL_QUESTIONS = [
+  {q:'Cuộc khởi nghĩa nào bị đàn áp vào tháng 2/1930, khiến Pháp tiến hành "khủng bố trắng" ở Đông Dương?',opts:['Khởi nghĩa Yên Bái','Khởi nghĩa Nam Kỳ','Khởi nghĩa Bắc Sơn','Khởi nghĩa Hương Khê'],ans:0,exp:'Khởi nghĩa Yên Bái (2/1930) do Việt Nam Quốc dân Đảng lãnh đạo bị đàn áp, khiến Pháp tăng cường khủng bố toàn Đông Dương.'},
+  {q:'Hội nghị TW lần thứ nhất (10/1930) quyết định đổi tên Đảng thành gì?',opts:['Đảng Cộng sản Đông Dương','Đảng Lao động Việt Nam','Đảng Nhân dân Cách mạng','Đảng Cộng sản Việt Nam'],ans:0,exp:'Hội nghị tại Hương Cảng (Hồng Kông) quyết định đổi tên từ Đảng Cộng sản Việt Nam thành Đảng Cộng sản Đông Dương.'},
+  {q:'Ai được bầu làm Tổng Bí thư tại Hội nghị TW lần I (10/1930)?',opts:['Trần Phú','Lê Hồng Phong','Hà Huy Tập','Nguyễn Văn Cừ'],ans:0,exp:'Đồng chí Trần Phú được bầu làm Tổng Bí thư đầu tiên của Đảng Cộng sản Đông Dương tại Hội nghị Hương Cảng.'},
+  {q:'Trước lúc hy sinh, Tổng Bí thư Trần Phú căn dặn: "Hãy..."?',opts:['"Giữ vững chí khí chiến đấu!"','"Tiến lên phía trước!"','"Bảo vệ Đảng đến cùng!"','"Đoàn kết là sức mạnh!"'],ans:0,exp:'Trần Phú hy sinh ngày 6/9/1931 tại Nhà thương Chợ Quán, Sài Gòn. Lời cuối: "Hãy giữ vững chí khí chiến đấu!"'},
+  {q:'Lý Tự Trọng trước lúc hy sinh đã nói câu nào nổi tiếng?',opts:['"Con đường của thanh niên chỉ có thể là con đường cách mạng"','"Chết vì Tổ quốc là vinh dự nhất"','"Máu đào phải đổi lấy tự do"','"Tuổi trẻ là ánh sáng tương lai"'],ans:0,exp:'Lý Tự Trọng — người thanh niên cộng sản kiên trung, để lại câu nói bất hủ về con đường cách mạng của thế hệ trẻ.'},
+  {q:'Đại hội Đảng lần thứ I được tổ chức ở đâu vào tháng 3/1935?',opts:['Ma Cao (Trung Quốc)','Hương Cảng (Hồng Kông)','Thượng Hải (Trung Quốc)','Mátxcơva (Liên Xô)'],ans:0,exp:'Đại hội đại biểu lần thứ I của Đảng họp tại Ma Cao (Trung Quốc) vào tháng 3/1935, do Lê Hồng Phong làm Tổng Bí thư.'},
+  {q:'Đại hội VII Quốc tế Cộng sản (7/1935) xác định kẻ thù nguy hiểm nhất trước mắt là gì?',opts:['Chủ nghĩa phát xít','Chủ nghĩa thực dân','Chủ nghĩa đế quốc','Chủ nghĩa tư bản'],ans:0,exp:'Đại hội VII (Mátxcơva, 7/1935) xác định chủ nghĩa phát xít là kẻ thù nguy hiểm nhất, đặt nhiệm vụ chống phát xít lên hàng đầu.'},
+  {q:'Hội nghị TW tại Thượng Hải (26/7/1936) do ai chủ trì?',opts:['Lê Hồng Phong','Hà Huy Tập','Nguyễn Văn Cừ','Trần Phú'],ans:0,exp:'Hội nghị 26/7/1936 tại Thượng Hải do đồng chí Lê Hồng Phong chủ trì, nhằm "sửa chữa sai lầm và định lại chính sách mới".'},
+  {q:'Văn kiện "Chung quanh vấn đề chiến sách mới" (10/1936) đề ra quan điểm gì về điền địa và phản đế?',opts:['Phản đế không nhất thiết phải gắn với điền địa','Điền địa phải đi trước phản đế','Hai nhiệm vụ phải tiến hành song song','Điền địa quyết định thắng lợi cách mạng'],ans:0,exp:'Đảng nêu: cuộc dân tộc giải phóng không nhất định phải kết chặt với điền địa — nếu mâu thuẫn thì ưu tiên nhiệm vụ quan trọng hơn.'},
+  {q:'Nguyễn Văn Cừ xuất bản cuốn sách nào năm 1939?',opts:['Tự chỉ trích','Sơ thảo lịch sử','Tờrốtxky và phản cách mạng','Luận cương chính trị'],ans:0,exp:'Tổng Bí thư Nguyễn Văn Cừ xuất bản "Tự chỉ trích" (1939), thẳng thắn chỉ ra sai lầm và bài học lãnh đạo của Đảng.'},
+  {q:'Cuộc biểu tình nông dân ngày 12/9/1930 ở đâu bị máy bay Pháp ném bom làm chết 171 người?',opts:['Hưng Nguyên (Nghệ An)','Hà Tĩnh','Thái Bình','Nam Định'],ans:0,exp:'Cuộc biểu tình của nông dân Hưng Nguyên (Nghệ An) ngày 12/9/1930 — sự kiện đỉnh cao của phong trào Xô viết Nghệ Tĩnh.'},
+  {q:'Từ tháng 6 đến tháng 8/1930 đã nổ ra bao nhiêu cuộc đấu tranh?',opts:['121 cuộc','84 cuộc','56 cuộc','200 cuộc'],ans:0,exp:'121 cuộc đấu tranh trong 3 tháng, đỉnh điểm là cuộc tổng bãi công của công nhân khu công nghiệp Bến Thủy–Vinh (8/1930).'},
+  {q:'Nguyễn Ái Quốc bị bắt ở đâu ngày 6/6/1931?',opts:['Hồng Kông','Thượng Hải','Mátxcơva','Quảng Châu'],ans:0,exp:'Nguyễn Ái Quốc bị chính quyền Anh bắt tại Hồng Kông ngày 6/6/1931. Người được trả tự do sau đó và trở lại Liên Xô năm 1934.'},
+  {q:'Chỉ thị ngày 18/11/1930 thành lập tổ chức mặt trận đầu tiên có tên là gì?',opts:['Hội Phản đế Đồng minh','Mặt trận Dân chủ Đông Dương','Hội Liên hiệp Quốc dân Việt Nam','Mặt trận Việt Minh'],ans:0,exp:'Ngày 18/11/1930, Thường vụ TW Đảng ban hành Chỉ thị về việc thành lập Hội Phản đế Đồng minh — tổ chức mặt trận đầu tiên.'},
+  {q:'Hội nghị TW tháng 3/1938 bầu ai làm Tổng Bí thư của Đảng?',opts:['Nguyễn Văn Cừ','Hà Huy Tập','Lê Hồng Phong','Nguyễn Thị Minh Khai'],ans:0,exp:'Hội nghị 29–30/3/1938 bầu đồng chí Nguyễn Văn Cừ làm Tổng Bí thư, đồng thời quyết định lập Mặt trận Dân chủ Đông Dương.'},
+  {q:'Riêng ở Nam Kỳ có bao nhiêu "ủy ban hành động" được thành lập năm 1936?',opts:['600','100','250','1000'],ans:0,exp:'Phong trào Đông Dương Đại hội năm 1936 lan rộng, riêng Nam Kỳ có 600 "ủy ban hành động" được lập ra trong thời gian ngắn.'},
+  {q:'Báo bí mật "Ý kiến chung" được xuất bản tại nhà tù nào?',opts:['Côn Đảo','Hỏa Lò (Hà Nội)','Khám Lớn (Sài Gòn)','Vinh'],ans:0,exp:'Tờ báo bí mật "Ý kiến chung" được các chi bộ đảng trong tù tại Côn Đảo xuất bản phục vụ học tập và đấu tranh tư tưởng.'},
+  {q:'Chương trình hành động của Đảng Cộng sản Đông Dương được công bố vào ngày nào?',opts:['15/6/1932','26/7/1936','14/10/1930','3/1935'],ans:0,exp:'Chương trình hành động (15/6/1932) do Lê Hồng Phong công bố, vạch rõ nhiệm vụ khôi phục tổ chức Đảng sau đàn áp trắng.'},
+  {q:'Hà Huy Tập làm Tổng Bí thư trong khoảng thời gian nào?',opts:['8/1936 – 3/1938','3/1935 – 8/1936','3/1938 – 9/1939','1931 – 1935'],ans:0,exp:'Đồng chí Hà Huy Tập là Tổng Bí thư từ tháng 8/1936 đến tháng 3/1938, giai đoạn phong trào dân chủ phát triển mạnh.'},
+  {q:'Phong trào truyền bá quốc ngữ phát triển mạnh từ thời điểm nào?',opts:['Cuối năm 1937','Đầu năm 1936','Sau 1939','Năm 1930'],ans:0,exp:'Từ cuối năm 1937, phong trào truyền bá quốc ngữ phát triển mạnh, góp phần nâng cao dân trí trong phong trào dân chủ.'},
+  {q:'Ngày 4/1938, Đảng có bao nhiêu đảng viên hoạt động bí mật?',opts:['1.597 người','3.000 người','500 người','10.000 người'],ans:0,exp:'Tháng 4/1938, Đảng có 1.597 đảng viên bí mật và hơn 200 đảng viên công khai; tổ chức quần chúng có 35.009 hội viên.'},
+  {q:'Toà án Đại hình Sài Gòn năm 1933 xét xử bao nhiêu chiến sĩ cộng sản?',opts:['120 người','56 người','200 người','84 người'],ans:0,exp:'Từ 2–9/5/1933, Tòa Đại hình Sài Gòn xét xử 120 chiến sĩ cộng sản, đày ra Côn Đảo (trong đó có Phạm Hùng, Ngô Gia Tự...).'},
+  {q:'Ban Chỉ huy ở ngoài của Đảng được thành lập vào thời gian nào?',opts:['Đầu năm 1934','Tháng 3/1935','Tháng 6/1932','Tháng 10/1930'],ans:0,exp:'Đầu năm 1934, theo chỉ đạo của Quốc tế Cộng sản, Ban Chỉ huy ở ngoài được thành lập để lãnh đạo phong trào trong nước.'},
+  {q:'Quốc tế Cộng sản công nhận Đảng Cộng sản Đông Dương là chi bộ độc lập vào ngày nào?',opts:['11/4/1931','6/9/1931','18/11/1930','15/6/1932'],ans:0,exp:'Ngày 11/4/1931, Quốc tế Cộng sản ra Nghị quyết công nhận Đảng Cộng sản Đông Dương là chi bộ độc lập.'},
+  {q:'Sự kiện nào đánh dấu kết thúc phong trào vận động dân chủ 1936–1939?',opts:['Chiến tranh TG2 bùng nổ (9/1939)','Mặt trận Nhân dân Pháp sụp đổ','Nguyễn Văn Cừ bị bắt','Đại hội Đảng II'],ans:0,exp:'Tháng 9/1939, Chiến tranh thế giới thứ hai bùng nổ — Pháp đàn áp cách mạng, Đảng rút vào bí mật, chấm dứt giai đoạn dân chủ.'},
+  {q:'Hà Huy Tập viết tác phẩm nào vào tháng 3/1933?',opts:['Sơ thảo lịch sử phong trào cộng sản Đông Dương','Tự chỉ trích','Luận cương chính trị','Tờrốtxky và phản cách mạng'],ans:0,exp:'"Sơ thảo lịch sử phong trào cộng sản Đông Dương" (3/1933) — tác phẩm đầu tiên tổng kết lịch sử Đảng, khẳng định vai trò Nguyễn Ái Quốc.'},
+  {q:'Ngày Quốc tế Lao động 5/1930, nổ ra bao nhiêu cuộc bãi công của công nhân?',opts:['16 cuộc','34 cuộc','4 cuộc','56 cuộc'],ans:0,exp:'Ngày 5/1930: 16 cuộc bãi công của công nhân, 34 cuộc biểu tình nông dân và 4 cuộc đấu tranh của nhân dân thành thị.'},
+  {q:'Đoàn đại biểu Đảng Cộng sản Đông Dương tại Đại hội VII QTCS gồm những ai?',opts:['Lê Hồng Phong, Nguyễn Thị Minh Khai, Hoàng Văn Nọn','Trần Phú, Hà Huy Tập, Lê Hồng Phong','Nguyễn Ái Quốc, Lê Hồng Phong, Nguyễn Văn Cừ','Hà Huy Tập, Phùng Chí Kiên, Nguyễn Thị Minh Khai'],ans:0,exp:'Ba đại biểu dự Đại hội VII (7/1935): Lê Hồng Phong (được bầu vào BCH QTCS), Nguyễn Thị Minh Khai, Hoàng Văn Nọn.'},
+  {q:'Cuộc vận động dân chủ 1936–1939 có ý nghĩa gì với Cách mạng Tháng Tám?',opts:['Là bước chuẩn bị lực lượng cho thắng lợi 1945','Là cuộc cách mạng hoàn chỉnh','Đã giải phóng được Đông Dương','Không có liên hệ với 1945'],ans:0,exp:'BOX 56 khẳng định: "Cuộc vận động dân chủ 1936–1939 làm cho trận địa và lực lượng cách mạng được mở rộng, là bước chuẩn bị cho Cách mạng Tháng Tám."'},
+  {q:'Tờ báo bí mật nào được xuất bản tại nhà tù Hỏa Lò?',opts:['"Đuốc đưa đường" và "Con đường chính"','"Ý kiến chung" và "Giải phóng"','"Nhân dân" và "Cờ đỏ"','"Tranh đấu" và "Tiến lên"'],ans:0,exp:'Tại Hỏa Lò (Hà Nội) có hai tờ báo bí mật: "Đuốc đưa đường" và "Con đường chính" — phục vụ học tập và đấu tranh tư tưởng.'},
+];
+
+// ============================================================
+// PERIODS
+// ============================================================
+const PERIODS=[
+  {id:'all',label:'📚 Tất cả',prompt:'Bạn có thể trả lời mọi câu hỏi về giai đoạn 1929–1939.',welcome:'Chào mừng bạn đến **Trung tâm Thảo luận Lịch sử**!\nHỏi tôi bất cứ điều gì về giai đoạn **1929–1939** của lịch sử cách mạng Việt Nam!',quickPrompts:['Tóm tắt toàn bộ 1929–1939','Nhân vật quan trọng nhất?','Những bước ngoặt lớn?','So sánh giai đoạn 1930–31 và 1936–39']},
+  {id:'khunghoang',label:'1929–1930',prompt:'Tập trung vào khủng hoảng kinh tế thế giới 1929–1933, Yên Bái, bãi công công nhân, biểu tình nông dân, cao trào 6–9/1930.',welcome:'## 1929–1930: Khủng hoảng & Bùng nổ\n- 🌍 Khủng hoảng kinh tế tư bản 1929–1933\n- ⚡ Pháp tăng cường bóc lột Đông Dương\n- 🏭 Bãi công liên tiếp (1–4/1930)\n- 🔥 121 cuộc đấu tranh (6–8/1930)',quickPrompts:['Khủng hoảng 1929 ảnh hưởng thế nào?','Phong trào công nhân 1930','Biểu tình Hưng Nguyên 12/9/1930','Xô viết Nghệ Tĩnh là gì?']},
+  {id:'xoviet',label:'1930–1931',prompt:'Tập trung vào Hội nghị TW I, Luận cương Trần Phú, đàn áp trắng, nhà tù, Lý Tự Trọng, Nguyễn Đức Cảnh.',welcome:'## 1930–1931: Xô viết & Đàn áp\n- 🏛 Hội nghị TW I: đổi tên Đảng, Trần Phú làm TBT\n- ✊ "Hãy giữ vững chí khí chiến đấu!" — Trần Phú\n- ⚡ "Con đường của thanh niên..." — Lý Tự Trọng\n- 🏫 Chi bộ bí mật trong nhà tù',quickPrompts:['Luận cương 10/1930 là gì?','Trần Phú – cống hiến lịch sử','Hoạt động trong nhà tù','Xô viết Nghệ Tĩnh sụp đổ thế nào?']},
+  {id:'phuchoi',label:'1932–1935',prompt:'Tập trung vào Lê Hồng Phong, Chương trình hành động 1932, phục hồi tổ chức, Đại hội I Ma Cao.',welcome:'## 1932–1935: Gian khổ Phục hồi\n- 📋 Chương trình hành động Lê Hồng Phong (1932)\n- 📚 Hà Huy Tập: Sơ thảo lịch sử (3/1933)\n- 🎯 Đại hội Đảng I – Ma Cao (3/1935)\n- ⚠️ Hạn chế: chưa đặt giải phóng dân tộc lên đầu',quickPrompts:['Đại hội I có gì đặc biệt?','Ba nhiệm vụ Đại hội I','Hạn chế của Đại hội I','Lê Hồng Phong là ai?']},
+  {id:'danchuvinh',label:'1936–1939',prompt:'Tập trung vào Đại hội VII QTCS, Mặt trận Dân chủ, chiến sách mới, Nguyễn Văn Cừ, Tự chỉ trích.',welcome:'## 1936–1939: Phong trào Dân chủ\n- 🌍 Đại hội VII QTCS – chống phát xít\n- 📰 Báo chí, sách chính trị công khai\n- 🤝 Mặt trận Dân chủ Đông Dương (3/1938)\n- ✍️ Tự chỉ trích – Nguyễn Văn Cừ (1939)',quickPrompts:['Tại sao 1936–1939 là bước ngoặt?','Mặt trận Dân chủ là gì?','Điền địa vs phản đế thay đổi thế nào?','Nguyễn Văn Cừ và Tự chỉ trích']},
+];
+const SYSTEM_BASE=`Bạn là chuyên gia lịch sử về Đảng Cộng sản Việt Nam giai đoạn 1929–1939. Trả lời chính xác theo sự kiện lịch sử, hoàn toàn bằng tiếng Việt, có cấu trúc rõ ràng. Dùng markdown: ## tiêu đề, **in đậm** cho sự kiện/mốc quan trọng, *in nghiêng* cho trích dẫn, > blockquote cho câu nói nổi tiếng. Cuối mỗi câu trả lời gợi mở 1–2 câu hỏi liên quan.`;
+
+// ============================================================
+// BOX DATA
+// ============================================================
+const BOXES_DATA=[
+  {id:1,era:'1929–1930 · Bối cảnh Thế giới',content:'Trong thời gian 1929–1933, khi Liên Xô đang đạt được những thành quả quan trọng trong công cuộc xây dựng đất nước, thì ở các nước tư bản chủ nghĩa diễn ra một cuộc khủng hoảng kinh tế trên quy mô lớn, để lại những hậu quả nặng nề, làm cho những mâu thuẫn trong lòng xã hội tư bản phát triển gay gắt. Phong trào cách mạng thế giới dâng cao.'},
+  {id:2,era:'1930 · Đông Dương',content:'Ở Đông Dương, thực dân Pháp tăng cường bóc lột để bù đắp những hậu quả của cuộc khủng hoảng kinh tế quốc, đồng thời tiến hành một chiến dịch khủng bố trắng nhằm đàn áp cuộc khởi nghĩa Yên Bái (2/1930). Mâu thuẫn giữa dân tộc Việt Nam với đế quốc Pháp và tay sai càng trở nên gay gắt.'},
+  {id:3,era:'1–4/1930 · Bãi công & Biểu tình',content:'Từ tháng 1 đến tháng 4/1930, bãi công của công nhân nổ ra liên tiếp ở nhà máy xi măng Hải Phòng, hãng dầu Nhà Bè (Sài Gòn), các đồn điền Phú Riềng, Dầu Tiếng, nhà máy dệt Nam Định, nhà máy diêm và nhà máy cưa Bến Thủy… Phong trào đấu tranh của nông dân cũng diễn ra ở nhiều địa phương như Hà Nam, Thái Bình, Nghệ An, Hà Tĩnh… Truyền đơn, cờ đỏ búa liềm xuất hiện trên các đường phố Hà Nội và nhiều địa phương.'},
+  {id:4,era:'5/1930 · Quốc tế Lao động',content:'5/1930, nhân dân Việt Nam kỷ niệm Ngày Quốc tế Lao động với những hình thức đấu tranh phong phú. Nổ ra 16 cuộc bãi công của công nhân, 34 cuộc biểu tình của nông dân và 4 cuộc đấu tranh của các tầng lớp nhân dân thành thị.'},
+  {id:5,era:'6–8/1930 · Leo thang Đấu tranh',content:'Từ tháng 6 đến tháng 8/1930 đã nổ ra 121 cuộc đấu tranh, nổi bật nhất là cuộc tổng bãi công của công nhân khu công nghiệp Bến Thủy – Vinh (8/1930), đánh dấu một thời kỳ mới, thời kỳ đấu tranh kịch liệt đã đến.'},
+  {id:6,era:'9/1930 · Đỉnh cao Phong trào',content:'9/1930, phong trào cách mạng phát triển đến đỉnh cao. Cuộc biểu tình của nông dân Hưng Nguyên, ngày 12/9/1930 bị đàn áp dữ dội, máy bay Pháp ném bom giết chết 171 người. Như lửa đổ thêm dầu, phong trào cách mạng bùng lên mạnh mẽ.'},
+  {id:7,era:'9/1930 · Chỉ đạo của Đảng',content:'Tháng 9/1930, Ban Thường vụ TW Đảng gửi Thông tri cho Xứ ủy Trung Kỳ vạch rõ chủ trương bạo động riêng lẻ là quá sớm. Trách nhiệm của Đảng là tổ chức quần chúng chống khủng bố, giữ vững lực lượng cách mạng.'},
+  {id:8,era:'Cuối 1930 · Khủng bố Trắng',content:'Từ cuối năm 1930, thực dân Pháp tập trung mọi lực lượng đàn áp khốc liệt, kết hợp thủ đoạn bạo lực với những thủ đoạn chính trị như cưỡng bức dân cày ra đầu thú, tổ chức rước cờ vàng, nhận thẻ quy thuận.'},
+  {id:9,era:'Đầu 1931 · Tổn thất nặng nề',content:'Đầu năm 1931, hàng nghìn chiến sĩ cộng sản, hàng vạn người yêu nước bị bắt, bị giết hoặc bị tù đày.'},
+  {id:10,era:'4/1931 · TW Đảng tan vỡ',content:'4/1931, toàn bộ Ban Chấp hành Trung ương Đảng bị bắt, không còn lại một ủy viên nào. "Các tổ chức của Đảng và của quần chúng tan rã hầu hết".'},
+  {id:11,era:'10/1930 · Hội nghị TW lần I',content:'Từ ngày 14 đến ngày 31/10/1930, Ban Chấp hành TW họp Hội nghị lần thứ nhất tại Hương Cảng (Hồng Kông), quyết định đổi tên Đảng Cộng sản Việt Nam thành Đảng Cộng sản Đông Dương. Đồng chí Trần Phú được bầu làm Tổng Bí thư.'},
+  {id:12,era:'10/1930 · Luận cương Chính trị',content:'Luận cương chính trị tháng 10/1930 đã xác định nhiều vấn đề cơ bản về chiến lược cách mạng, về cơ bản thống nhất với nội dung của Chính cương, sách lược vắn tắt của Hội nghị thành lập Đảng tháng 2/1930.'},
+  {id:13,era:'11/1930 · Hội Phản đế Đồng minh',content:'Ngày 18/11/1930, Thường vụ TW Đảng ban hành Chỉ thị về việc thành lập Hội Phản đế Đồng minh — tổ chức mặt trận đầu tiên để tập hợp, đoàn kết các giai cấp, tầng lớp dân tộc.'},
+  {id:14,era:'1931 · Giai đoạn Gian khổ',content:'Do bị tổn thất nặng nề, cách mạng Việt Nam bước vào giai đoạn đấu tranh cực kỳ gian khổ. Tháng 1/1931, TW Đảng ra Thông cáo vạch rõ thủ đoạn kẻ thù và hướng dẫn quần chúng đấu tranh. Trần Phú bị bắt ngày 18/4/1931 tại Sài Gòn.'},
+  {id:15,era:'5/1931 · Chỉnh đốn Đảng',content:'Xứ ủy Trung Kỳ ra chủ trương "thanh trừ trí, phú, địa, hào, đào tận gốc, trốc tận rễ". Tháng 5/1931, TW Đảng phê phán sai lầm này và vạch ra phương hướng xây dựng Đảng, "làm cho Đảng Bolshevik hóa để cách mạng hóa quần chúng".'},
+  {id:16,era:'11/4/1931 · Quốc tế Công nhận',content:'11/4/1931, Quốc tế Cộng sản ra Nghị quyết công nhận Đảng Cộng sản Đông Dương là chi bộ độc lập — khẳng định vai trò lãnh đạo của Đảng.'},
+  {id:17,era:'6/9/1931 · Trần Phú Hy sinh',content:'Tổng Bí thư Trần Phú hy sinh ngày 6/9/1931 tại Nhà thương Chợ Quán (Sài Gòn), trước lúc hy sinh căn dặn: "Hãy giữ vững chí khí chiến đấu!".'},
+  {id:18,era:'1931 · Tấm gương Chiến sĩ',content:'Nằm trong xà lim án chém, Nguyễn Đức Cảnh vẫn viết tổng kết công tác vận động công nhân. Lý Tự Trọng trước lúc hy sinh nói: "Con đường của thanh niên chỉ có thể là con đường cách mạng".'},
+  {id:19,era:'1931 · Đấu tranh trong Tù',content:'Các đảng viên trong nhà tù Hỏa Lò, Khám Lớn, Vinh, Hải Phòng, Côn Đảo... bí mật thành lập nhiều chi bộ để lãnh đạo đấu tranh chống chế độ nhà tù hà khắc. Anh chị em tù Hỏa Lò tuyệt thực phản đối vụ án tử hình Nguyễn Đức Cảnh.'},
+  {id:20,era:'1931–1932 · Trường học Cách mạng',content:'Nhiều chi bộ nhà tù tổ chức huấn luyện đảng viên về lý luận Mác–Lênin, đường lối chính trị của Đảng, kinh nghiệm vận động cách mạng; tổ chức học văn hóa, ngoại ngữ.'},
+  {id:21,era:'1931–1932 · Tài liệu trong Tù',content:'Nhiều tài liệu huấn luyện được biên soạn trong tù. Báo bí mật: "Đuốc đưa đường" và "Con đường chính" (Hỏa Lò); "Ý kiến chung" (Côn Đảo). Các tác phẩm Mác–Lênin được dịch ra tiếng Việt.'},
+  {id:22,era:'6/6/1931 · Nguyễn Ái Quốc bị bắt',content:'6/6/1931, lãnh tụ Nguyễn Ái Quốc bị chính quyền Anh ở Hồng Kông bắt giam.'},
+  {id:23,era:'Đầu 1934 · Nguyễn Ái Quốc',content:'Đầu năm 1934, sau khi ra tù, Người trở lại làm việc ở Quốc tế Cộng sản (Mátxcơva – Liên Xô).'},
+  {id:24,era:'Đầu 1932 · Chương trình Hành động',content:'Đầu năm 1932, Lê Hồng Phong cùng một số đồng chí công bố Chương trình hành động của Đảng Cộng sản Đông Dương và các chương trình của Công hội, Nông hội, Thanh niên Cộng sản đoàn.'},
+  {id:25,era:'15/6/1932 · Khôi phục Tổ chức',content:'Chương trình hành động (15/6/1932) vạch ra nhiệm vụ khôi phục tổ chức Đảng, cần "gây dựng một đoàn thể bí mật, có kỷ luật nghiêm ngặt, vững như sắt đồng, tức Đảng Cộng sản để hướng đạo quần chúng".'},
+  {id:26,era:'3/1933 · Sơ thảo Lịch sử',content:'3/1933, Hà Huy Tập viết Sơ thảo lịch sử phong trào cộng sản Đông Dương, bước đầu tổng kết kinh nghiệm lãnh đạo của Đảng, khẳng định công lao của Nguyễn Ái Quốc.'},
+  {id:27,era:'5/1933 · Phiên tòa Đại hình',content:'Từ 2–9/5/1933, Tòa án Đại hình Sài Gòn xét xử 120 chiến sĩ cộng sản và đày ra Côn Đảo, trong đó có Ngô Gia Tự, Nguyễn Chí Diểu, Lê Văn Lương, Phạm Hùng, Bùi Lâm.'},
+  {id:28,era:'Đầu 1934 · Ban Chỉ huy ở ngoài',content:'Đầu năm 1934, theo chỉ đạo của Quốc tế Cộng sản, Ban Chỉ huy ở ngoài của Đảng Cộng sản Đông Dương được thành lập để lãnh đạo phong trào trong nước.'},
+  {id:29,era:'Đầu 1935 · Tổ chức Phục hồi',content:'Đầu năm 1935, hệ thống tổ chức của Đảng được phục hồi, tạo cơ sở để tiến tới Đại hội đại biểu lần thứ I.'},
+  {id:30,era:'3/1935 · Đại hội Đảng I',content:'Tháng 3/1935, Đại hội đại biểu lần thứ I họp ở Ma Cao (Trung Quốc), đề ra 3 nhiệm vụ: 1) Củng cố và phát triển Đảng; 2) Vận động tập hợp quần chúng; 3) Tuyên truyền chống đế quốc, chống chiến tranh, ủng hộ Liên Xô.'},
+  {id:31,era:'3/1935 · Lê Hồng Phong – TBT',content:'Đại hội bầu Lê Hồng Phong làm Tổng Bí thư, bầu đoàn đại biểu dự Đại hội VII Quốc tế Cộng sản. Nguyễn Ái Quốc được cử làm đại diện Đảng bên cạnh Quốc tế Cộng sản.'},
+  {id:32,era:'3/1935 · Hạn chế Đại hội I',content:'Đại hội I (3/1935) chưa đề ra chiến lược phù hợp, chưa đặt nhiệm vụ giải phóng dân tộc lên hàng đầu. "Chính sách Đại hội Ma Cao vạch ra không sát với phong trào cách mạng thế giới và trong nước lúc bấy giờ".'},
+  {id:33,era:'3/1935 · Ý nghĩa Đại hội I',content:'Đại hội I đánh dấu sự phục hồi hệ thống tổ chức của Đảng và phong trào cách mạng quần chúng, tạo điều kiện để bước vào cao trào cách mạng mới.'},
+  {id:34,era:'1933–1935 · Nguy cơ Phát xít',content:'Chủ nghĩa phát xít xuất hiện và tạm thời thắng thế ở Đức, Italia, Tây Ban Nha. Nguy cơ chiến tranh thế giới đe dọa nghiêm trọng nền hòa bình và an ninh quốc tế.'},
+  {id:35,era:'7/1935 · Đại hội VII QTCS',content:'7/1935, Quốc tế Cộng sản họp Đại hội VII tại Mátxcơva, xác định chủ nghĩa phát xít là kẻ thù nguy hiểm nhất. Nhiệm vụ: chống phát xít, chống chiến tranh, bảo vệ dân chủ và hòa bình.'},
+  {id:36,era:'7/1935 · Đoàn đại biểu Đông Dương',content:'Đoàn đại biểu Đảng Cộng sản Đông Dương dự Đại hội VII: Lê Hồng Phong, Nguyễn Thị Minh Khai, Hoàng Văn Nọn. Lê Hồng Phong được bầu vào Ban Chấp hành Quốc tế Cộng sản.'},
+  {id:37,era:'1936 · Mặt trận Nhân dân Pháp',content:'Mặt trận Nhân dân Pháp (do Đảng Cộng sản Pháp làm nòng cốt) thắng lợi trong tổng tuyển cử 1936, dẫn đến sự ra đời của Chính phủ Mặt trận Nhân dân Pháp.'},
+  {id:38,era:'1936 · Điều kiện Thuận lợi',content:'Ở Việt Nam, mọi tầng lớp xã hội đều mong muốn cải cách dân chủ. Đảng tranh thủ cơ hội thuận lợi để xây dựng, phát triển tổ chức đảng và các tổ chức quần chúng rộng rãi.'},
+  {id:39,era:'26/7/1936 · Hội nghị Thượng Hải',content:'Ngày 26/7/1936, BCH TW Đảng họp tại Thượng Hải, do Lê Hồng Phong chủ trì, nhằm "sửa chữa những sai lầm" trước đó và "định lại chính sách mới" theo nghị quyết Đại hội VII Quốc tế Cộng sản.'},
+  {id:40,era:'8/1936–3/1938 · Hà Huy Tập TBT',content:'Đồng chí Hà Huy Tập là Tổng Bí thư của Đảng từ tháng 8/1936 đến tháng 3/1938.'},
+  {id:41,era:'3–9/1937 · Hội nghị TW III & IV',content:'Các Hội nghị TW lần III (3/1937) và IV (9/1937) bàn sâu về tổ chức, quyết định tập hợp quần chúng trong mặt trận chống phản động thuộc địa, đòi tự do, dân chủ, cơm áo, hòa bình.'},
+  {id:42,era:'1936 · Phản đế vs Điền địa',content:'Chỉ thị 26/7/1936 chỉ rõ: "ở xứ thuộc địa như Đông Dương, nếu chỉ quan tâm đến đấu tranh giai cấp có thể gây khó khăn cho phong trào giải phóng dân tộc".'},
+  {id:43,era:'10/1936 · Chiến sách Mới',content:'Văn kiện "Chung quanh vấn đề chiến sách mới" (10/1936): "Cuộc dân tộc giải phóng không nhất định phải kết chặt với điền địa... phải chọn địch nhân chính, nguy hiểm nhất, để tập trung lực lượng đánh cho được toàn thắng".'},
+  {id:44,era:'1936–1939 · Vận động Dân chủ',content:'Dưới sự lãnh đạo của Đảng, cuộc vận động dân chủ diễn ra trên quy mô rộng lớn, lôi cuốn đông đảo quần chúng tham gia với những hình thức đấu tranh phong phú.'},
+  {id:45,era:'1936 · Ủy ban Hành động',content:'Đảng phát động vận động lập "Ủy ban trù bị Đông Dương đại hội". Trong thời gian ngắn, các "ủy ban hành động" được lập khắp nơi. Riêng Nam Kỳ có 600 "ủy ban hành động".'},
+  {id:46,era:'Đầu 1937 · Đón tiếp Godart',content:'Đầu 1937, nhân dịp phái viên Godart đi kinh lý và Brévié sang nhận chức toàn quyền, Đảng vận động hai cuộc biểu dương lực lượng quần chúng dưới danh nghĩa "đón rước", mít tinh, biểu tình.'},
+  {id:47,era:'5/6/1937 · Hà Huy Tập – Tư tưởng',content:'Ngày 5/6/1937, Hà Huy Tập xuất bản "Tờrốtxky và phản cách mạng", phê phán luận điệu "tả khuynh" của các phần tử trốtxkít như Tạ Thu Thâu, góp phần xây dựng Đảng về tư tưởng.'},
+  {id:48,era:'1936–1939 · Báo chí Công khai',content:'Các báo chí tiếng Việt và tiếng Pháp của Đảng, Mặt trận Dân chủ Đông Dương ra đời. Nhiều sách chính trị phổ thông được xuất bản để giới thiệu chủ nghĩa Mác–Lênin và chính sách mới của Đảng.'},
+  {id:49,era:'Cuối 1937 · Truyền bá Quốc ngữ',content:'Từ cuối năm 1937, phong trào truyền bá quốc ngữ phát triển mạnh.'},
+  {id:50,era:'29–30/3/1938 · Mặt trận Dân chủ',content:'Hội nghị TW (29–30/3/1938) quyết định lập Mặt trận Dân chủ Đông Dương, bầu đồng chí Nguyễn Văn Cừ làm Tổng Bí thư của Đảng.'},
+  {id:51,era:'1937–1938 · Tranh cử Dân biểu',content:'Mặt trận Dân chủ tổ chức vận động tranh cử vào các Viện dân biểu Bắc Kỳ, Trung Kỳ, Hội đồng quản hạt Nam Kỳ, Hội đồng kinh tế lý tài Đông Dương.'},
+  {id:52,era:'1939 · Tự Chỉ Trích',content:'Năm 1939, Tổng Bí thư Nguyễn Văn Cừ xuất bản "Tự chỉ trích", thẳng thắn chỉ rõ những sai lầm, khuyết điểm và bài học cần thiết trong lãnh đạo của Đảng.'},
+  {id:53,era:'10/1938 · Nguyễn Ái Quốc về TQ',content:'Tháng 10/1938, Nguyễn Ái Quốc rời Mátxcơva trở lại Trung Quốc. Năm 1939, từ Trung Quốc, Người gửi nhiều thư cho TW Đảng, truyền đạt quan điểm Quốc tế Cộng sản và góp ý quan trọng.'},
+  {id:54,era:'9/1939 · Chiến tranh TG2',content:'Chiến tranh thế giới thứ hai bùng nổ (9/1939), thực dân Pháp đàn áp cách mạng, Đảng rút vào hoạt động bí mật. Cuộc vận động dân chủ kết thúc.'},
+  {id:55,era:'4/1938 · Lực lượng Đảng',content:'4/1938, Đảng có 1.597 đảng viên hoạt động bí mật và hơn 200 đảng viên công khai. Số hội viên các tổ chức quần chúng: 35.009 người.'},
+  {id:56,era:'1936–1939 · Ý nghĩa Lịch sử',content:'Cuộc vận động dân chủ 1936–1939 làm cho trận địa và lực lượng cách mạng được mở rộng, là bước chuẩn bị cho thắng lợi của Cách mạng Tháng Tám sau này.'},
+];
+
+// ============================================================
+// CANVAS / WORLD
+// ============================================================
+const ctx = canvas.getContext('2d');
+const GROUND_Y=CH-56,WORLD_W=7200;
+const GRAVITY=0.55,JUMP_VY=-13.5,SPEED=4.2,GOAL_X=WORLD_W-320;
+
+let completed=new Set();
+try{const s=localStorage.getItem('spst_done');if(s)completed=new Set(JSON.parse(s));}catch(e){}
+let paused=false,activeBoxId=null,goalUnlocked=completed.size>=56,chatHistory=[];
+let activePeriod='all',chatCloseCooldown=0;
+let score=0;
+try{const s=localStorage.getItem('spst_score');if(s)score=parseInt(s)||0;}catch(e){}
+
+const fireworks=[];
+const GROUND={x:0,y:GROUND_Y,w:WORLD_W,h:56};
+const platDefs=[
+  [160,360,110],[320,310,90],[490,265,110],[660,305,90],[830,350,110],
+  [1000,295,90],[1170,330,110],[1340,270,90],[1520,310,110],[1700,355,90],
+  [1870,290,110],[2050,325,90],[2230,268,110],[2410,308,90],[2590,350,110],
+  [2770,285,90],[2950,320,110],[3130,265,90],[3310,305,110],[3490,350,90],
+  [3670,285,110],[3850,325,90],[4030,268,110],[4210,308,90],[4390,350,110],
+  [4570,285,90],[4750,320,110],[4930,265,90],[5110,305,110],[5290,350,90],
+  [5470,285,110],[5650,320,90],[5830,268,110],[6010,308,90],[6200,350,110],
+];
+const PLATFORMS=platDefs.map(([x,y,w])=>({x,y,w,h:16}));
+
+const MBOXES=BOXES_DATA.map((bd,i)=>{
+  const startX=180,spacingX=120;
+  const bx=startX+i*spacingX;
+  const by=i%2===0?250:310;
+  return{id:bd.id,x:bx,y:by,w:36,h:36,done:completed.has(bd.id),bounceOff:0,bOffY:0};
+});
+for(const b of MBOXES)if(completed.has(b.id))b.done=true;
+
+const P={x:60,y:GROUND_Y-44,w:32,h:44,vx:0,vy:0,onGround:false,right:true,af:0,at:0};
+let camX=0;
+const keys={};
+
+window.addEventListener('keydown',e=>{
+  keys[e.code]=true;
+  if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
+  if(e.code==='Enter'&&document.getElementById('modal').classList.contains('show'))closeBox();
+  if(document.getElementById('chatOverlay').classList.contains('show')){
+    if(['ArrowLeft','ArrowRight','KeyA','KeyD'].includes(e.code))closeChat();
+  }
+});
+window.addEventListener('keyup',e=>{keys[e.code]=false;});
+
+function addScore(pts,wx,wy){
+  score+=pts;
+  try{localStorage.setItem('spst_score',score);}catch(e){}
+  document.getElementById('scoreDisplay').textContent=score;
+  const pop=document.createElement('div');
+  pop.className='score-popup';
+  pop.textContent='+'+pts;
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=rect.width/CW, scaleY=rect.height/CH;
+  const sx=rect.left+(wx-camX)*scaleX;
+  const sy=rect.top+wy*scaleY;
+  pop.style.left=sx+'px'; pop.style.top=sy+'px';
+  document.body.appendChild(pop);
+  setTimeout(()=>pop.remove(),1200);
+}
+document.getElementById('scoreDisplay').textContent=score;
+
+function spawnFireworks(){
+  for(let i=0;i<12;i++){
+    fireworks.push({
+      x:Math.random()*CW, y:Math.random()*(CH*0.6)+20,
+      particles:Array.from({length:22},()=>({
+        vx:(Math.random()-0.5)*7, vy:(Math.random()-0.5)*7,
+        life:1, color:`hsl(${Math.random()*60+10},100%,60%)`
+      })),
+      life:1
+    });
+  }
+}
+function updateFireworks(){
+  for(let i=fireworks.length-1;i>=0;i--){
+    const fw=fireworks[i];
+    fw.life-=0.012;
+    for(const p of fw.particles){p.vx*=0.96;p.vy=p.vy*0.96+0.05;p.life-=0.015;}
+    if(fw.life<=0||fw.particles.every(p=>p.life<=0))fireworks.splice(i,1);
+  }
+}
+function drawFireworks(){
+  for(const fw of fireworks){
+    for(const p of fw.particles){
+      if(p.life<=0)continue;
+      ctx.save();
+      ctx.globalAlpha=p.life*fw.life;
+      ctx.fillStyle=p.color;
+      const ox=fw.x+p.vx*(1-p.life)*30, oy=fw.y+p.vy*(1-p.life)*30;
+      ctx.beginPath();ctx.arc(ox,oy,2.5,0,Math.PI*2);ctx.fill();
+      ctx.restore();
+    }
+  }
+}
+
+const bgStars=[];
+for(let i=0;i<70;i++)bgStars.push({x:Math.random()*CW,y:Math.random()*(CH*.6),r:Math.random()*1.5+.3,t:Math.random()*Math.PI*2});
+let bgTick=0;
+
+function drawBackground(){
+  bgTick++;
+  const g=ctx.createLinearGradient(0,0,0,CH*.75);
+  g.addColorStop(0,'#0f0000');g.addColorStop(.4,'#4a0000');g.addColorStop(1,'#780000');
+  ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);
+  for(const s of bgStars){
+    const f=.55+.45*Math.sin(s.t+bgTick*.025);
+    ctx.fillStyle=`rgba(255,220,160,${f*.85})`;
+    ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
+  }
+  ctx.save();ctx.globalAlpha=.035;ctx.fillStyle='#FFD700';
+  ctx.font='bold 200px serif';ctx.textAlign='center';
+  for(let i=0;i<3;i++){const hx=((i*700-camX*.04)%(CW+600)+CW+600)%(CW+600)-100;ctx.fillText('☭',hx,CH*.58);}
+  ctx.globalAlpha=1;ctx.textAlign='left';ctx.restore();
+  for(let i=0;i<7;i++){const fx=((i*280-camX*.07)%(CW+300)+CW+300)%(CW+300)-80;drawFlag(fx,30+i%3*8,bgTick);}
+  ctx.fillStyle='rgba(70,0,0,.5)';
+  for(let i=0;i<9;i++){const mx=((i*210-camX*.11)%(CW+300)+CW+300)%(CW+300)-80;ctx.beginPath();ctx.moveTo(mx,CH);ctx.lineTo(mx+105,CH-155);ctx.lineTo(mx+210,CH);ctx.fill();}
+  ctx.fillStyle='rgba(35,0,0,.65)';
+  for(let i=0;i<7;i++){const mx=((i*260+90-camX*.17)%(CW+300)+CW+300)%(CW+300)-80;ctx.beginPath();ctx.moveTo(mx,CH);ctx.lineTo(mx+130,CH-105);ctx.lineTo(mx+260,CH);ctx.fill();}
+}
+function drawFlag(fx,fy,t){
+  const FW=40,FH=28;
+  ctx.fillStyle='#aa6600';ctx.fillRect(fx,fy,2,FH+20);
+  ctx.save();ctx.beginPath();ctx.moveTo(fx+2,fy);
+  for(let px=0;px<=FW;px++){const wave=Math.sin(px/FW*Math.PI*1.5+t*.065)*4;ctx.lineTo(fx+2+px,fy+wave);}
+  for(let px=FW;px>=0;px--){const wave=Math.sin(px/FW*Math.PI*1.5+t*.065)*4;ctx.lineTo(fx+2+px,fy+FH+wave);}
+  ctx.closePath();ctx.fillStyle='#cc0000';ctx.fill();
+  drawStar(fx+2+FW*.28,fy+FH*.5,6,3,5);
+  ctx.restore();
+}
+function drawStar(cx,cy,outerR,innerR,points){
+  ctx.save();ctx.fillStyle='#FFD700';ctx.beginPath();
+  for(let i=0;i<points*2;i++){
+    const r=i%2===0?outerR:innerR,angle=(i*Math.PI/points)-Math.PI/2;
+    i===0?ctx.moveTo(cx+r*Math.cos(angle),cy+r*Math.sin(angle)):ctx.lineTo(cx+r*Math.cos(angle),cy+r*Math.sin(angle));
+  }
+  ctx.closePath();ctx.fill();ctx.restore();
+}
+function drawGround(){
+  ctx.fillStyle='#200e00';ctx.fillRect(-camX%1,GROUND_Y,WORLD_W,GROUND.h);
+  ctx.fillStyle='#6b0000';ctx.fillRect(0,GROUND_Y,CW,8);
+  ctx.strokeStyle='#330e00';ctx.lineWidth=1;
+  for(let gx=(-camX%48+48)%48-48;gx<CW+48;gx+=48)
+    for(let gy=GROUND_Y+8;gy<GROUND_Y+GROUND.h;gy+=14){const o=(Math.floor(gy/14)%2)*24;ctx.strokeRect(gx+o,gy,47,13);}
+  ctx.fillStyle='#8b0000';
+  for(let gx=(-camX%12+12)%12-12;gx<CW+12;gx+=6)ctx.fillRect(gx,GROUND_Y-1,2,7+(gx%3)*2);
+}
+function drawPlatform(pl){
+  const sx=pl.x-camX;if(sx>CW+20||sx+pl.w<-20)return;
+  ctx.fillStyle='rgba(0,0,0,.35)';ctx.fillRect(sx+3,pl.y+3,pl.w,pl.h);
+  ctx.fillStyle='#5a1500';ctx.fillRect(sx,pl.y,pl.w,pl.h);
+  ctx.fillStyle='#7a2500';ctx.fillRect(sx,pl.y,pl.w,5);
+  ctx.fillStyle='rgba(0,0,0,.2)';
+  for(let bx=sx;bx<sx+pl.w;bx+=16)ctx.fillRect(bx,pl.y,1,pl.h);
+  ctx.fillStyle='#FFD70033';ctx.fillRect(sx,pl.y,pl.w,1);
+}
+function drawMBox(b){
+  const sx=b.x-camX;if(sx>CW+60||sx<-60)return;
+  const sy=b.y+b.bOffY;
+  if(b.done){
+    ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(sx+2,sy+2,b.w,b.h);
+    ctx.fillStyle='#251200';ctx.fillRect(sx,sy,b.w,b.h);
+    ctx.fillStyle='#3a2000';ctx.fillRect(sx+3,sy+3,b.w-6,b.h-6);
+    ctx.fillStyle='#5a4030';ctx.font='10px serif';ctx.textAlign='center';ctx.fillText('✓',sx+b.w/2,sy+b.h/2+4);ctx.textAlign='left';
+  }else{
+    ctx.fillStyle='rgba(0,0,0,.3)';ctx.fillRect(sx+3,sy+3,b.w,b.h);
+    ctx.fillStyle='#996600';ctx.fillRect(sx,sy,b.w,b.h);
+    ctx.fillStyle='#FFD700';ctx.fillRect(sx+2,sy+2,b.w-4,b.h-4);
+    ctx.fillStyle='#ffe566';ctx.fillRect(sx+4,sy+4,b.w-8,b.h-8);
+    ctx.fillStyle='#fff8cc';ctx.fillRect(sx+5,sy+5,b.w-16,4);ctx.fillRect(sx+5,sy+5,4,b.h-14);
+    ctx.fillStyle='#aa8800';ctx.fillRect(sx+2,sy+b.h-5,b.w-4,3);
+    ctx.fillStyle='#7a0000';ctx.font='bold 20px serif';ctx.textAlign='center';ctx.fillText('?',sx+b.w/2,sy+b.h-7);ctx.textAlign='left';
+    ctx.fillStyle='#5a0000';ctx.font='bold 7px monospace';ctx.fillText(b.id,sx+2,sy+9);
+  }
+}
+function drawPlayer(){
+  const sx=P.x-camX,sy=P.y;
+  ctx.save();
+  if(!P.right){ctx.translate(sx+P.w,0);ctx.scale(-1,1);}else ctx.translate(sx,0);
+  const run=P.vx!==0&&P.onGround,jump=!P.onGround,f=P.af;
+  ctx.fillStyle='rgba(0,0,0,.2)';ctx.beginPath();ctx.ellipse(P.w/2,sy+P.h+3,13,4,0,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#7a0000';ctx.fillRect(5,sy+1,22,5);
+  ctx.fillStyle='#B22222';ctx.fillRect(7,sy-2,16,7);
+  ctx.fillStyle='#FFD700';ctx.fillRect(8,sy-1,6,3);ctx.fillStyle='#B22222';ctx.fillRect(9,sy,4,2);
+  ctx.fillStyle='#FDBCB4';ctx.fillRect(7,sy+5,18,13);
+  ctx.fillStyle='#222';ctx.fillRect(10,sy+9,3,3);ctx.fillRect(18,sy+9,3,3);
+  ctx.fillStyle='#333';ctx.fillRect(10,sy+7,4,2);ctx.fillRect(18,sy+7,4,2);
+  ctx.fillStyle='#2a1800';ctx.fillRect(9,sy+14,14,3);
+  ctx.fillStyle='rgba(255,140,140,.3)';ctx.beginPath();ctx.arc(10,sy+14,4,0,Math.PI*2);ctx.fill();ctx.beginPath();ctx.arc(22,sy+14,4,0,Math.PI*2);ctx.fill();
+  ctx.fillStyle='#B22222';ctx.fillRect(4,sy+18,24,19);
+  ctx.fillStyle='#8a1111';
+  ctx.beginPath();ctx.moveTo(4,sy+18);ctx.lineTo(10,sy+24);ctx.lineTo(4,sy+37);ctx.fill();
+  ctx.beginPath();ctx.moveTo(28,sy+18);ctx.lineTo(22,sy+24);ctx.lineTo(28,sy+37);ctx.fill();
+  ctx.fillStyle='#f0e0c0';ctx.fillRect(10,sy+18,12,16);
+  ctx.fillStyle='#FFD700';ctx.font='bold 14px serif';ctx.textAlign='center';ctx.fillText('★',P.w/2,sy+31);ctx.textAlign='left';
+  ctx.fillStyle='#B22222';
+  if(jump){ctx.fillRect(-2,sy+18,7,10);ctx.fillRect(27,sy+18,7,10);}
+  else if(run&&f%2===0){ctx.fillRect(-1,sy+22,6,9);ctx.fillRect(27,sy+19,6,9);}
+  else{ctx.fillRect(0,sy+20,5,9);ctx.fillRect(27,sy+20,5,9);}
+  ctx.fillStyle='#FDBCB4';ctx.fillRect(-2,sy+(jump?27:29),5,5);ctx.fillRect(29,sy+(jump?27:29),5,5);
+  ctx.fillStyle='#1a1a3a';
+  if(jump){ctx.fillRect(5,sy+37,11,8);ctx.fillRect(16,sy+37,11,8);}
+  else if(run){if(f%2===0){ctx.fillRect(5,sy+37,11,10);ctx.fillRect(16,sy+35,11,12);}else{ctx.fillRect(5,sy+35,11,12);ctx.fillRect(16,sy+37,11,10);}}
+  else{ctx.fillRect(5,sy+37,11,10);ctx.fillRect(16,sy+37,11,10);}
+  ctx.fillStyle='#FFD700';ctx.fillRect(4,sy+36,24,3);ctx.fillStyle='#cc9900';ctx.fillRect(14,sy+36,4,3);
+  ctx.fillStyle='#111';ctx.fillRect(3,sy+46,14,6);ctx.fillRect(15,sy+46,14,6);
+  ctx.fillStyle='#333';ctx.fillRect(4,sy+47,4,2);ctx.fillRect(16,sy+47,4,2);
+  ctx.restore();
+}
+function drawGoal(){
+  const sx=GOAL_X-camX;
+  if(sx>CW+200||sx<-250)return;
+  const gy=GROUND_Y;
+  ctx.fillStyle='#3a1200';ctx.fillRect(sx,gy-170,150,170);
+  ctx.fillStyle='#4a2000';
+  for(let bi=0;bi<5;bi++)if(bi%2===0)ctx.fillRect(sx+bi*32,gy-192,26,26);
+  ctx.fillStyle='#FFD70033';ctx.fillRect(sx+18,gy-145,30,22);ctx.fillRect(sx+100,gy-145,30,22);
+  ctx.strokeStyle='#FFD70066';ctx.lineWidth=1;ctx.strokeRect(sx+18,gy-145,30,22);ctx.strokeRect(sx+100,gy-145,30,22);
+  ctx.fillStyle='#100800';ctx.fillRect(sx+52,gy-75,46,75);
+  ctx.beginPath();ctx.arc(sx+75,gy-75,23,Math.PI,0);ctx.fill();
+  ctx.strokeStyle='#6b3300';ctx.lineWidth=2;ctx.beginPath();ctx.arc(sx+75,gy-75,23,Math.PI,0);ctx.stroke();
+  if(goalUnlocked){
+    const aura=ctx.createRadialGradient(sx+75,gy-85,10,sx+75,gy-85,80);
+    aura.addColorStop(0,'rgba(255,215,0,.15)');aura.addColorStop(1,'rgba(255,215,0,0)');
+    ctx.fillStyle=aura;ctx.fillRect(sx-10,gy-200,180,200);
+    ctx.fillStyle='#6a0000';ctx.fillRect(sx+73,gy-240,3,60);
+    ctx.fillStyle='#B22222';ctx.fillRect(sx+76,gy-240,36,24);
+    ctx.fillStyle='#FFD700';ctx.font='14px serif';ctx.fillText('★',sx+82,gy-222);
+    ctx.shadowBlur=15;ctx.shadowColor='#FFD700';ctx.fillStyle='#FFD700';
+    ctx.font='bold 8px monospace';ctx.textAlign='center';
+    ctx.fillText('📜 AI HISTORY',sx+75,gy-88);ctx.fillText('▼ VÀO ĐÂY ▼',sx+75,gy-72);
+    ctx.shadowBlur=0;
+    ctx.fillStyle='rgba(255,215,0,.18)';ctx.fillRect(sx+158,gy-58,90,32);
+    ctx.strokeStyle='#FFD700';ctx.lineWidth=1.5;ctx.strokeRect(sx+158,gy-58,90,32);
+    ctx.fillStyle='#FFD700';ctx.font='bold 7px monospace';
+    ctx.fillText('↺ CHƠI LẠI',sx+203,gy-37);
+    ctx.textAlign='left';
+  }else{
+    ctx.fillStyle='#555';ctx.font='28px serif';ctx.textAlign='center';ctx.fillText('🔒',sx+75,gy-90);
+    ctx.fillStyle='#888';ctx.font='7px monospace';ctx.fillText('ĐỌC HẾT 56 BOX',sx+75,gy-68);ctx.textAlign='left';
+  }
+}
+function drawMinimap(){
+  const mw=130,mh=16,mx=CW-mw-8,my=CH-mh-6;
+  ctx.fillStyle='rgba(0,0,0,.6)';ctx.fillRect(mx,my,mw,mh);
+  ctx.strokeStyle='#FFD70055';ctx.lineWidth=1;ctx.strokeRect(mx,my,mw,mh);
+  for(const b of MBOXES)if(b.done){const bx2=mx+(b.x/WORLD_W)*mw;ctx.fillStyle='#FFD70066';ctx.fillRect(bx2,my+2,2,mh-4);}
+  const px2=mx+(P.x/WORLD_W)*mw;ctx.fillStyle='#FFD700';ctx.fillRect(px2-2,my,4,mh);
+  const gx2=mx+(GOAL_X/WORLD_W)*mw;ctx.fillStyle=goalUnlocked?'#ff4444':'#666';ctx.fillRect(gx2,my,3,mh);
+  ctx.fillStyle='#FFD70099';ctx.font='6px monospace';ctx.fillText('MAP',mx+2,my+mh-3);
+}
+
+function update(){
+  if(paused)return;
+  P.vx=0;
+  if(keys['ArrowLeft']||keys['KeyA']){P.vx=-SPEED;P.right=false;}
+  if(keys['ArrowRight']||keys['KeyD']){P.vx=SPEED;P.right=true;}
+  if((keys['Space']||keys['ArrowUp']||keys['KeyW'])&&P.onGround){P.vy=JUMP_VY;P.onGround=false;}
+  P.vy=Math.min(P.vy+GRAVITY,15);
+  P.x=Math.max(0,Math.min(WORLD_W-P.w,P.x+P.vx));
+  P.y+=P.vy;P.onGround=false;
+  if(P.y+P.h>=GROUND_Y&&P.vy>=0){P.y=GROUND_Y-P.h;P.vy=0;P.onGround=true;}
+  for(const pl of PLATFORMS){
+    if(P.x+P.w<=pl.x||P.x>=pl.x+pl.w)continue;
+    const pb=P.y+P.h-P.vy;
+    if(P.vy>=0&&pb<=pl.y+2&&P.y+P.h>=pl.y){P.y=pl.y-P.h;P.vy=0;P.onGround=true;}
+  }
+  for(const b of MBOXES){
+    if(b.done)continue;
+    if(P.x+P.w<=b.x+2||P.x>=b.x+b.w-2)continue;
+    const pt=P.y-P.vy;
+    if(P.vy<0&&pt>=b.y+b.h-2&&P.y<=b.y+b.h){P.vy=2;triggerBox(b);}
+  }
+  if(P.y>CH+100){P.y=GROUND_Y-P.h;P.vy=0;P.onGround=true;}
+  if(++P.at>=7){P.at=0;P.af=(P.af+1)%4;}
+  camX=Math.max(0,Math.min(WORLD_W-CW,P.x+P.w/2-CW*.38));
+  for(const b of MBOXES){
+    if(b.bounceOff>0){b.bounceOff--;b.bOffY=-Math.sin((1-b.bounceOff/20)*Math.PI)*14;}else b.bOffY=0;
+  }
+  if(chatCloseCooldown>0)chatCloseCooldown--;
+  if(goalUnlocked&&chatCloseCooldown===0&&P.x+P.w>GOAL_X+44&&P.x<GOAL_X+106&&P.y+P.h>GROUND_Y-75)openChatArea();
+  updateFireworks();
+}
+
+function triggerBox(b){
+  b.done=true;b.bounceOff=20;activeBoxId=b.id;paused=true;
+  addScore(10,b.x+b.w/2,b.y);
+  const data=BOXES_DATA.find(d=>d.id===b.id);
+  document.getElementById('modalTitle').textContent=`BOX ${b.id}`;
+  document.getElementById('modalEra').textContent=data.era||'';
+  document.getElementById('modalBadge').textContent=`${completed.size+1} / 56`;
+  document.getElementById('modalBody').textContent=data.content;
+  document.getElementById('modal').classList.add('show');
+}
+function closeBox(){
+  if(!document.getElementById('modal').classList.contains('show'))return;
+  if(activeBoxId!==null){
+    completed.add(activeBoxId);
+    try{localStorage.setItem('spst_done',JSON.stringify([...completed]));}catch(e){}
+    activeBoxId=null;updateHUD();
+  }
+  document.getElementById('modal').classList.remove('show');
+  paused=false;
+  if(completed.size>=56&&!goalUnlocked){
+    goalUnlocked=true;
+    spawnFireworks();spawnFireworks();
+    setTimeout(()=>{spawnFireworks();},600);
+    setTimeout(()=>{
+      paused=true;
+      document.getElementById('victoryScore').textContent=score;
+      document.getElementById('victoryOverlay').classList.add('show');
+    },1800);
+  }
+}
+document.getElementById('btnContinue').onclick=closeBox;
+
+function updateHUD(){
+  const n=completed.size;
+  document.getElementById('progressFill').style.width=(n/56*100)+'%';
+  document.getElementById('progressTxt').textContent=`${n} / 56`;
+}
+updateHUD();
+
+canvas.addEventListener('click',e=>{
+  if(!goalUnlocked)return;
+  const rect=canvas.getBoundingClientRect();
+  const scaleX=CW/rect.width, scaleY=CH/rect.height;
+  const mx=(e.clientX-rect.left)*scaleX;
+  const my=(e.clientY-rect.top)*scaleY;
+  const bx=GOAL_X-camX+158, by=GROUND_Y-58;
+  if(mx>=bx&&mx<=bx+90&&my>=by&&my<=by+32)doRestart();
+});
+
+function doRestart(){
+  completed=new Set();score=0;
+  try{localStorage.removeItem('spst_done');localStorage.removeItem('spst_score');}catch(e){}
+  for(const b of MBOXES)b.done=false;
+  goalUnlocked=false;paused=false;chatCloseCooldown=0;
+  P.x=60;P.y=GROUND_Y-44;P.vx=0;P.vy=0;camX=0;
+  updateHUD();
+  document.getElementById('scoreDisplay').textContent=0;
+  document.getElementById('victoryOverlay').classList.remove('show');
+  document.getElementById('chatOverlay').classList.remove('show');
+  document.getElementById('quizOverlay').classList.remove('show');
+  document.getElementById('timelineOverlay').classList.remove('show');
+}
+document.getElementById('btnRestart').onclick=doRestart;
+
+let lastT=0;
+function loop(ts){
+  const dt=Math.min((ts-lastT)/16.67,3);lastT=ts;
+  update();
+  ctx.clearRect(0,0,CW,CH);
+  drawBackground();drawGround();
+  for(const pl of PLATFORMS)drawPlatform(pl);
+  for(const b of MBOXES)drawMBox(b);
+  drawGoal();drawPlayer();
+  drawFireworks();
+  drawMinimap();
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+
+// TIMELINE
+function buildTimeline(){
+  const el=document.getElementById('timelineBody');
+  el.innerHTML='';
+  for(const p of TIMELINE_PERIODS){
+    const sec=document.createElement('div');sec.className='tl-period';
+    sec.innerHTML=`<div class="tl-period-title">${p.title}</div>`;
+    for(const item of p.items){
+      sec.innerHTML+=`<div class="tl-item"><div class="tl-dot"></div><div class="tl-text"><span class="tl-date">${item.date}</span> — ${item.text}</div></div>`;
+    }
+    el.appendChild(sec);
+  }
+}
+document.getElementById('btnShowTimeline').onclick=()=>{
+  buildTimeline();
+  document.getElementById('victoryOverlay').classList.remove('show');
+  document.getElementById('timelineOverlay').classList.add('show');
+};
+document.getElementById('btnCloseTimeline').onclick=()=>{
+  document.getElementById('timelineOverlay').classList.remove('show');
+  document.getElementById('victoryOverlay').classList.add('show');
+};
+document.getElementById('btnTimelineToQuiz').onclick=()=>{
+  document.getElementById('timelineOverlay').classList.remove('show');
+  startQuiz();
+};
+document.getElementById('btnTimelineToChat').onclick=()=>{
+  document.getElementById('timelineOverlay').classList.remove('show');
+  openChatArea();
+};
+
+// QUIZ
+let quizQuestions=[],quizIdx=0,quizScore=0,quizAnswered=false;
+function startQuiz(){
+  const shuffled=[...ALL_QUESTIONS].sort(()=>Math.random()-.5);
+  quizQuestions=shuffled.slice(0,10);
+  quizIdx=0;quizScore=0;quizAnswered=false;
+  document.getElementById('quizOverlay').classList.add('show');
+  document.getElementById('victoryOverlay').classList.remove('show');
+  renderQuizQuestion();
+}
+document.getElementById('btnStartQuiz').onclick=()=>{
+  document.getElementById('victoryOverlay').classList.remove('show');
+  startQuiz();
+};
+function renderQuizQuestion(){
+  if(quizIdx>=quizQuestions.length){renderQuizResult();return;}
+  const q=quizQuestions[quizIdx];
+  document.getElementById('quizProgress').textContent=`Câu ${quizIdx+1} / ${quizQuestions.length}`;
+  quizAnswered=false;
+  document.getElementById('quizContent').innerHTML=`
+    <div class="quiz-body">
+      <div class="quiz-q">${q.q}</div>
+      <div class="quiz-opts">
+        ${q.opts.map((o,i)=>`<button class="quiz-opt" data-i="${i}">${String.fromCharCode(65+i)}. ${o}</button>`).join('')}
+      </div>
+      <div class="quiz-explanation" id="quizExp">${q.exp}</div>
+    </div>
+    <div class="quiz-footer">
+      <div class="quiz-score-txt">✓ ${quizScore} / ${quizIdx} điểm</div>
+      <button class="btn-quiz-next" id="btnQuizNext" style="display:none">${quizIdx+1<quizQuestions.length?'Câu tiếp →':'Xem kết quả →'}</button>
+    </div>`;
+  document.querySelectorAll('.quiz-opt').forEach(btn=>{
+    btn.addEventListener('click',()=>{
+      if(quizAnswered)return;
+      quizAnswered=true;
+      const chosen=parseInt(btn.dataset.i);
+      const correct=quizQuestions[quizIdx].ans;
+      document.querySelectorAll('.quiz-opt').forEach((b,i)=>{
+        b.disabled=true;
+        if(i===correct)b.classList.add('correct');
+        if(i===chosen&&chosen!==correct)b.classList.add('wrong');
+      });
+      if(chosen===correct){quizScore++;addScore(20,CW/2,CH/2);}
+      document.getElementById('quizExp').classList.add('show');
+      document.getElementById('btnQuizNext').style.display='';
+      document.querySelector('.quiz-score-txt').textContent=`✓ ${quizScore} / ${quizIdx+1} điểm`;
+    });
+  });
+  document.getElementById('btnQuizNext').onclick=()=>{quizIdx++;renderQuizQuestion();};
+}
+function renderQuizResult(){
+  const pct=Math.round(quizScore/quizQuestions.length*100);
+  const medal=pct>=90?'🥇':pct>=70?'🥈':pct>=50?'🥉':'📚';
+  const msg=pct>=90?'Xuất sắc! Bạn nắm vững lịch sử Đảng CSVN!':pct>=70?'Tốt lắm! Kiến thức khá vững.':pct>=50?'Khá! Hãy ôn lại một số mốc quan trọng.':'Cần ôn tập thêm! Hãy đọc lại các box.';
+  addScore(pct>=70?50:0,CW/2,CH/2);
+  document.getElementById('quizContent').innerHTML=`
+    <div class="quiz-result">
+      <div class="quiz-medals">${medal}</div>
+      <div class="quiz-result-score">${quizScore} / ${quizQuestions.length}</div>
+      <div class="quiz-result-msg">${msg}<br><small style="color:#FFD70088">Tổng điểm hiện tại: ${score}</small></div>
+      <div class="quiz-result-buttons">
+        <button class="btn-v secondary" onclick="startQuiz()">🔄 Làm lại</button>
+        <button class="btn-v primary" onclick="document.getElementById('quizOverlay').classList.remove('show');openChatArea()">🤖 Vào AI Chat</button>
+        <button class="btn-v secondary" onclick="document.getElementById('quizOverlay').classList.remove('show');document.getElementById('victoryOverlay').classList.add('show')">← Quay lại</button>
+      </div>
+    </div>`;
+  if(pct>=70){spawnFireworks();setTimeout(spawnFireworks,500);}
+}
+
+document.getElementById('btnOpenChat').onclick=()=>{document.getElementById('victoryOverlay').classList.remove('show');openChatArea();};
+
+// CHAT
+function openChatArea(){
+  if(document.getElementById('chatOverlay').classList.contains('show'))return;
+  paused=true;
+  buildChatUI();
+  document.getElementById('chatOverlay').classList.add('show');
+}
+function closeChat(){
+  document.getElementById('chatOverlay').classList.remove('show');
+  paused=false;
+  chatCloseCooldown=180;
+}
+document.getElementById('chatCloseBtn').onclick=closeChat;
+
+function buildChatUI(){
+  const tabsEl=document.getElementById('chatTabs');tabsEl.innerHTML='';
+  for(const p of PERIODS){
+    const btn=document.createElement('button');btn.className='chat-tab'+(p.id===activePeriod?' active':'');
+    btn.textContent=p.label;btn.onclick=()=>switchPeriod(p.id);tabsEl.appendChild(btn);
+  }
+  if(document.getElementById('chatMessages').children.length===0)loadPeriodWelcome(activePeriod);
+  buildQuickPrompts(activePeriod);
+}
+function switchPeriod(pid){
+  activePeriod=pid;chatHistory=[];
+  document.querySelectorAll('.chat-tab').forEach(t=>{t.classList.toggle('active',t.textContent===PERIODS.find(p=>p.id===pid).label);});
+  document.getElementById('chatMessages').innerHTML='';
+  loadPeriodWelcome(pid);buildQuickPrompts(pid);
+}
+function loadPeriodWelcome(pid){
+  const p=PERIODS.find(x=>x.id===pid);
+  const el=document.createElement('div');el.className='msg bot';
+  el.innerHTML=`<div class="msg-era-tag">${p.label}</div><br>${renderMD(p.welcome)}`;
+  document.getElementById('chatMessages').appendChild(el);
+}
+function buildQuickPrompts(pid){
+  const p=PERIODS.find(x=>x.id===pid);
+  const el=document.getElementById('quickPrompts');el.innerHTML='';
+  for(const qp of p.quickPrompts){
+    const btn=document.createElement('button');btn.className='qp-btn';btn.textContent=qp;
+    btn.onclick=()=>{document.getElementById('chatInput').value=qp;sendChat();};
+    el.appendChild(btn);
+  }
+}
+function renderMD(t){
+  return t
+    .replace(/^---$/gm,'<hr>').replace(/^### (.+)$/gm,'<h3>$1</h3>').replace(/^## (.+)$/gm,'<h2>$1</h2>').replace(/^# (.+)$/gm,'<h1>$1</h1>')
+    .replace(/^> (.+)$/gm,'<blockquote>$1</blockquote>').replace(/\*\*(.+?)\*\*/g,'<strong>$1</strong>').replace(/\*(.+?)\*/g,'<em>$1</em>')
+    .replace(/`(.+?)`/g,'<code>$1</code>').replace(/^[-•] (.+)$/gm,'<li>$1</li>').replace(/^(\d+)\. (.+)$/gm,'<li><strong>$1.</strong> $2</li>')
+    .replace(/(<li>[\s\S]+?)(?=\n[^<]|\n*$)/g,m=>`<ul>${m}</ul>`).replace(/\n\n/g,'<br><br>').replace(/\n/g,'<br>');
+}
+function timeStr(){const d=new Date();return`${d.getHours().toString().padStart(2,'0')}:${d.getMinutes().toString().padStart(2,'0')}`;}
+
+async function sendChat(){
+  const msg=document.getElementById('chatInput').value.trim();
+  if(!msg||document.getElementById('sendBtn').disabled)return;
+  document.getElementById('chatInput').value='';document.getElementById('sendBtn').disabled=true;
+  const period=PERIODS.find(p=>p.id===activePeriod);
+  const uEl=document.createElement('div');uEl.className='msg user';
+  uEl.innerHTML=msg.replace(/</g,'&lt;')+`<div class="msg-time">${timeStr()}</div>`;
+  document.getElementById('chatMessages').appendChild(uEl);
+  chatHistory.push({role:'user',content:msg});
+  const botEl=document.createElement('div');botEl.className='msg bot';
+  botEl.innerHTML='<div class="typing-dots"><span></span><span></span><span></span></div>';
+  document.getElementById('chatMessages').appendChild(botEl);
+  document.getElementById('chatMessages').scrollTop=99999;
+  try{
+    const sysPrompt=`${SYSTEM_BASE}\nGiai đoạn đang thảo luận: ${period.label}.\n${period.prompt}`;
+    const res=await fetch('https://api.groq.com/openai/v1/chat/completions',{method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+GROQ_API_KEY},
+      body:JSON.stringify({model:GROQ_MODEL,messages:[{role:'system',content:sysPrompt},...chatHistory.slice(-14)],max_tokens:1400,temperature:0.6})});
+    const data=await res.json();
+    if(data.error)throw new Error(data.error.message);
+    const reply=data.choices[0].message.content;
+    chatHistory.push({role:'assistant',content:reply});
+    botEl.innerHTML=`<div class="msg-era-tag">${period.label}</div><br>${renderMD(reply)}<div class="msg-time">${timeStr()} · AI</div>`;
+  }catch(err){
+    botEl.innerHTML=`<span style="color:#ff7777">❌ Groq API lỗi: <code>${err.message}</code></span>`;
+  }
+  document.getElementById('sendBtn').disabled=false;
+  document.getElementById('chatMessages').scrollTop=99999;
+}
+document.getElementById('sendBtn').onclick=sendChat;
+document.getElementById('chatInput').addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();sendChat();}});
+
+// Mobile
+if('ontouchstart' in window){
+  const bar=document.createElement('div');
+  bar.style.cssText='position:fixed;bottom:0;left:0;right:0;display:flex;justify-content:space-between;align-items:flex-end;padding:8px 14px 12px;z-index:50;pointer-events:none';
+  bar.innerHTML=`<div style="display:flex;gap:8px;pointer-events:all"><button id="tl" style="width:60px;height:60px;background:rgba(178,34,34,.88);border:2px solid #FFD700;color:#FFD700;font-size:24px;border-radius:10px;touch-action:none">◀</button><button id="tr" style="width:60px;height:60px;background:rgba(178,34,34,.88);border:2px solid #FFD700;color:#FFD700;font-size:24px;border-radius:10px;touch-action:none">▶</button></div><button id="tj" style="width:76px;height:60px;background:rgba(255,215,0,.92);border:2px solid #B22222;color:#B22222;font-family:'Press Start 2P',monospace;font-size:8px;border-radius:10px;pointer-events:all;touch-action:none">JUMP</button>`;
+  document.body.appendChild(bar);
+  [['tl','ArrowLeft'],['tr','ArrowRight'],['tj','Space']].forEach(([id,c])=>{
+    document.getElementById(id).addEventListener('touchstart',e=>{e.preventDefault();keys[c]=true;},{passive:false});
+    document.getElementById(id).addEventListener('touchend',e=>{e.preventDefault();keys[c]=false;},{passive:false});
+  });
+}
+</script>
+</body>
+</html>
