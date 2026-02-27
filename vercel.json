@@ -1,6 +1,7 @@
 {
   "rewrites": [
     { "source": "/api/chat", "destination": "/api/chat" },
-    { "source": "/", "destination": "/public/mario-history-game.html" }
+    { "source": "/", "destination": "/public/mario-history-game.html" },
+    { "source": "/(.*)", "destination": "/public/$1" }
   ]
 }
