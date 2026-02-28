@@ -183,7 +183,21 @@ canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
 <div id="gameWrapper">
   <canvas id="gameCanvas" width="900" height="480"></canvas>
 </div>
-<div id="hintBar">← → / A D : DI CHUYỂN &nbsp;|&nbsp; SPACE / ↑ : NHẢY &nbsp;|&nbsp; NHẢY ĐẬP VÀO Ô ? ĐỂ ĐỌC &nbsp;|&nbsp; ENTER : ĐÓNG HỘP</div>
+<div id="hintBar" style="display:flex;align-items:center;justify-content:space-between;padding:4px 14px;gap:8px;">
+  <span>← → / A D : DI CHUYỂN &nbsp;|&nbsp; SPACE / ↑ : NHẢY &nbsp;|&nbsp; NHẢY ĐẬP VÀO Ô ? ĐỂ ĐỌC &nbsp;|&nbsp; ENTER : ĐÓNG HỘP</span>
+  <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+    <span style="font-family:'Press Start 2P',monospace;font-size:6px;color:#FFD70077;">CHEAT:</span>
+    <input id="cheatInput" type="text" maxlength="10"
+      placeholder="CODE..."
+      style="background:#1a0800;border:1px solid #FFD70055;color:#FFD700;font-family:'Press Start 2P',monospace;font-size:6px;padding:3px 7px;border-radius:3px;width:80px;outline:none;letter-spacing:1px;"
+      autocomplete="off" spellcheck="false"/>
+    <button id="cheatBtn"
+      style="font-family:'Press Start 2P',monospace;font-size:6px;background:linear-gradient(180deg,#d43030,#7a1111);color:#FFD700;border:1px solid #FFD700;padding:3px 8px;border-radius:3px;cursor:pointer;">
+      OK
+    </button>
+    <span id="cheatMsg" style="font-family:'Press Start 2P',monospace;font-size:6px;color:#FFD700;display:none;"></span>
+  </div>
+</div>
 
 <!-- Box Modal -->
 <div id="modal">
@@ -266,14 +280,8 @@ canvas{display:block;image-rendering:pixelated;image-rendering:crisp-edges;}
 </div>
 
 <script>
-// ============================================================
-// CONFIG — KHÔNG còn API key ở đây, đã chuyển lên server
-// ============================================================
 const GROQ_MODEL = 'llama-3.3-70b-versatile';
 
-// ============================================================
-// FULLSCREEN SCALE
-// ============================================================
 const canvas = document.getElementById('gameCanvas');
 const wrapper = document.getElementById('gameWrapper');
 const CW = 900, CH = 480;
@@ -287,9 +295,6 @@ function resizeCanvas() {
 window.addEventListener('resize', resizeCanvas);
 resizeCanvas();
 
-// ============================================================
-// TIMELINE DATA
-// ============================================================
 const TIMELINE_PERIODS = [
   { title:'1929–1930 · Khủng hoảng & Bùng nổ', items:[
     {date:'1929–1933',text:'Khủng hoảng kinh tế thế giới — tư bản lao đao, phong trào cách mạng toàn cầu dâng cao'},
@@ -331,9 +336,6 @@ const TIMELINE_PERIODS = [
   ]},
 ];
 
-// ============================================================
-// QUIZ QUESTIONS
-// ============================================================
 const ALL_QUESTIONS = [
   {q:'Cuộc khởi nghĩa nào bị đàn áp vào tháng 2/1930, khiến Pháp tiến hành "khủng bố trắng" ở Đông Dương?',opts:['Khởi nghĩa Yên Bái','Khởi nghĩa Nam Kỳ','Khởi nghĩa Bắc Sơn','Khởi nghĩa Hương Khê'],ans:0,exp:'Khởi nghĩa Yên Bái (2/1930) do Việt Nam Quốc dân Đảng lãnh đạo bị đàn áp, khiến Pháp tăng cường khủng bố toàn Đông Dương.'},
   {q:'Hội nghị TW lần thứ nhất (10/1930) quyết định đổi tên Đảng thành gì?',opts:['Đảng Cộng sản Đông Dương','Đảng Lao động Việt Nam','Đảng Nhân dân Cách mạng','Đảng Cộng sản Việt Nam'],ans:0,exp:'Hội nghị tại Hương Cảng (Hồng Kông) quyết định đổi tên từ Đảng Cộng sản Việt Nam thành Đảng Cộng sản Đông Dương.'},
@@ -343,33 +345,15 @@ const ALL_QUESTIONS = [
   {q:'Đại hội Đảng lần thứ I được tổ chức ở đâu vào tháng 3/1935?',opts:['Ma Cao (Trung Quốc)','Hương Cảng (Hồng Kông)','Thượng Hải (Trung Quốc)','Mátxcơva (Liên Xô)'],ans:0,exp:'Đại hội đại biểu lần thứ I của Đảng họp tại Ma Cao (Trung Quốc) vào tháng 3/1935, do Lê Hồng Phong làm Tổng Bí thư.'},
   {q:'Đại hội VII Quốc tế Cộng sản (7/1935) xác định kẻ thù nguy hiểm nhất trước mắt là gì?',opts:['Chủ nghĩa phát xít','Chủ nghĩa thực dân','Chủ nghĩa đế quốc','Chủ nghĩa tư bản'],ans:0,exp:'Đại hội VII (Mátxcơva, 7/1935) xác định chủ nghĩa phát xít là kẻ thù nguy hiểm nhất, đặt nhiệm vụ chống phát xít lên hàng đầu.'},
   {q:'Hội nghị TW tại Thượng Hải (26/7/1936) do ai chủ trì?',opts:['Lê Hồng Phong','Hà Huy Tập','Nguyễn Văn Cừ','Trần Phú'],ans:0,exp:'Hội nghị 26/7/1936 tại Thượng Hải do đồng chí Lê Hồng Phong chủ trì, nhằm "sửa chữa sai lầm và định lại chính sách mới".'},
-  {q:'Văn kiện "Chung quanh vấn đề chiến sách mới" (10/1936) đề ra quan điểm gì về điền địa và phản đế?',opts:['Phản đế không nhất thiết phải gắn với điền địa','Điền địa phải đi trước phản đế','Hai nhiệm vụ phải tiến hành song song','Điền địa quyết định thắng lợi cách mạng'],ans:0,exp:'Đảng nêu: cuộc dân tộc giải phóng không nhất định phải kết chặt với điền địa — nếu mâu thuẫn thì ưu tiên nhiệm vụ quan trọng hơn.'},
+  {q:'Văn kiện "Chung quanh vấn đề chiến sách mới" (10/1936) đề ra quan điểm gì về điền địa và phản đế?',opts:['Phản đế không nhất thiết phải gắn với điền địa','Điền địa phải đi trước phản đế','Hai nhiệm vụ phải tiến hành song song','Điền địa quyết định thắng lợi cách mạng'],ans:0,exp:'Đảng nêu: cuộc dân tộc giải phóng không nhất thiết phải kết chặt với điền địa — nếu mâu thuẫn thì ưu tiên nhiệm vụ quan trọng hơn.'},
   {q:'Nguyễn Văn Cừ xuất bản cuốn sách nào năm 1939?',opts:['Tự chỉ trích','Sơ thảo lịch sử','Tờrốtxky và phản cách mạng','Luận cương chính trị'],ans:0,exp:'Tổng Bí thư Nguyễn Văn Cừ xuất bản "Tự chỉ trích" (1939), thẳng thắn chỉ ra sai lầm và bài học lãnh đạo của Đảng.'},
   {q:'Cuộc biểu tình nông dân ngày 12/9/1930 ở đâu bị máy bay Pháp ném bom làm chết 171 người?',opts:['Hưng Nguyên (Nghệ An)','Hà Tĩnh','Thái Bình','Nam Định'],ans:0,exp:'Cuộc biểu tình của nông dân Hưng Nguyên (Nghệ An) ngày 12/9/1930 — sự kiện đỉnh cao của phong trào Xô viết Nghệ Tĩnh.'},
   {q:'Từ tháng 6 đến tháng 8/1930 đã nổ ra bao nhiêu cuộc đấu tranh?',opts:['121 cuộc','84 cuộc','56 cuộc','200 cuộc'],ans:0,exp:'121 cuộc đấu tranh trong 3 tháng, đỉnh điểm là cuộc tổng bãi công của công nhân khu công nghiệp Bến Thủy–Vinh (8/1930).'},
   {q:'Nguyễn Ái Quốc bị bắt ở đâu ngày 6/6/1931?',opts:['Hồng Kông','Thượng Hải','Mátxcơva','Quảng Châu'],ans:0,exp:'Nguyễn Ái Quốc bị chính quyền Anh bắt tại Hồng Kông ngày 6/6/1931. Người được trả tự do sau đó và trở lại Liên Xô năm 1934.'},
   {q:'Chỉ thị ngày 18/11/1930 thành lập tổ chức mặt trận đầu tiên có tên là gì?',opts:['Hội Phản đế Đồng minh','Mặt trận Dân chủ Đông Dương','Hội Liên hiệp Quốc dân Việt Nam','Mặt trận Việt Minh'],ans:0,exp:'Ngày 18/11/1930, Thường vụ TW Đảng ban hành Chỉ thị về việc thành lập Hội Phản đế Đồng minh — tổ chức mặt trận đầu tiên.'},
   {q:'Hội nghị TW tháng 3/1938 bầu ai làm Tổng Bí thư của Đảng?',opts:['Nguyễn Văn Cừ','Hà Huy Tập','Lê Hồng Phong','Nguyễn Thị Minh Khai'],ans:0,exp:'Hội nghị 29–30/3/1938 bầu đồng chí Nguyễn Văn Cừ làm Tổng Bí thư, đồng thời quyết định lập Mặt trận Dân chủ Đông Dương.'},
-  {q:'Riêng ở Nam Kỳ có bao nhiêu "ủy ban hành động" được thành lập năm 1936?',opts:['600','100','250','1000'],ans:0,exp:'Phong trào Đông Dương Đại hội năm 1936 lan rộng, riêng Nam Kỳ có 600 "ủy ban hành động" được lập ra trong thời gian ngắn.'},
-  {q:'Báo bí mật "Ý kiến chung" được xuất bản tại nhà tù nào?',opts:['Côn Đảo','Hỏa Lò (Hà Nội)','Khám Lớn (Sài Gòn)','Vinh'],ans:0,exp:'Tờ báo bí mật "Ý kiến chung" được các chi bộ đảng trong tù tại Côn Đảo xuất bản phục vụ học tập và đấu tranh tư tưởng.'},
-  {q:'Chương trình hành động của Đảng Cộng sản Đông Dương được công bố vào ngày nào?',opts:['15/6/1932','26/7/1936','14/10/1930','3/1935'],ans:0,exp:'Chương trình hành động (15/6/1932) do Lê Hồng Phong công bố, vạch rõ nhiệm vụ khôi phục tổ chức Đảng sau đàn áp trắng.'},
-  {q:'Hà Huy Tập làm Tổng Bí thư trong khoảng thời gian nào?',opts:['8/1936 – 3/1938','3/1935 – 8/1936','3/1938 – 9/1939','1931 – 1935'],ans:0,exp:'Đồng chí Hà Huy Tập là Tổng Bí thư từ tháng 8/1936 đến tháng 3/1938, giai đoạn phong trào dân chủ phát triển mạnh.'},
-  {q:'Phong trào truyền bá quốc ngữ phát triển mạnh từ thời điểm nào?',opts:['Cuối năm 1937','Đầu năm 1936','Sau 1939','Năm 1930'],ans:0,exp:'Từ cuối năm 1937, phong trào truyền bá quốc ngữ phát triển mạnh, góp phần nâng cao dân trí trong phong trào dân chủ.'},
-  {q:'Ngày 4/1938, Đảng có bao nhiêu đảng viên hoạt động bí mật?',opts:['1.597 người','3.000 người','500 người','10.000 người'],ans:0,exp:'Tháng 4/1938, Đảng có 1.597 đảng viên bí mật và hơn 200 đảng viên công khai; tổ chức quần chúng có 35.009 hội viên.'},
-  {q:'Toà án Đại hình Sài Gòn năm 1933 xét xử bao nhiêu chiến sĩ cộng sản?',opts:['120 người','56 người','200 người','84 người'],ans:0,exp:'Từ 2–9/5/1933, Tòa Đại hình Sài Gòn xét xử 120 chiến sĩ cộng sản, đày ra Côn Đảo (trong đó có Phạm Hùng, Ngô Gia Tự...).'},
-  {q:'Ban Chỉ huy ở ngoài của Đảng được thành lập vào thời gian nào?',opts:['Đầu năm 1934','Tháng 3/1935','Tháng 6/1932','Tháng 10/1930'],ans:0,exp:'Đầu năm 1934, theo chỉ đạo của Quốc tế Cộng sản, Ban Chỉ huy ở ngoài được thành lập để lãnh đạo phong trào trong nước.'},
-  {q:'Quốc tế Cộng sản công nhận Đảng Cộng sản Đông Dương là chi bộ độc lập vào ngày nào?',opts:['11/4/1931','6/9/1931','18/11/1930','15/6/1932'],ans:0,exp:'Ngày 11/4/1931, Quốc tế Cộng sản ra Nghị quyết công nhận Đảng Cộng sản Đông Dương là chi bộ độc lập.'},
-  {q:'Sự kiện nào đánh dấu kết thúc phong trào vận động dân chủ 1936–1939?',opts:['Chiến tranh TG2 bùng nổ (9/1939)','Mặt trận Nhân dân Pháp sụp đổ','Nguyễn Văn Cừ bị bắt','Đại hội Đảng II'],ans:0,exp:'Tháng 9/1939, Chiến tranh thế giới thứ hai bùng nổ — Pháp đàn áp cách mạng, Đảng rút vào bí mật, chấm dứt giai đoạn dân chủ.'},
-  {q:'Hà Huy Tập viết tác phẩm nào vào tháng 3/1933?',opts:['Sơ thảo lịch sử phong trào cộng sản Đông Dương','Tự chỉ trích','Luận cương chính trị','Tờrốtxky và phản cách mạng'],ans:0,exp:'"Sơ thảo lịch sử phong trào cộng sản Đông Dương" (3/1933) — tác phẩm đầu tiên tổng kết lịch sử Đảng, khẳng định vai trò Nguyễn Ái Quốc.'},
-  {q:'Ngày Quốc tế Lao động 5/1930, nổ ra bao nhiêu cuộc bãi công của công nhân?',opts:['16 cuộc','34 cuộc','4 cuộc','56 cuộc'],ans:0,exp:'Ngày 5/1930: 16 cuộc bãi công của công nhân, 34 cuộc biểu tình nông dân và 4 cuộc đấu tranh của nhân dân thành thị.'},
-  {q:'Đoàn đại biểu Đảng Cộng sản Đông Dương tại Đại hội VII QTCS gồm những ai?',opts:['Lê Hồng Phong, Nguyễn Thị Minh Khai, Hoàng Văn Nọn','Trần Phú, Hà Huy Tập, Lê Hồng Phong','Nguyễn Ái Quốc, Lê Hồng Phong, Nguyễn Văn Cừ','Hà Huy Tập, Phùng Chí Kiên, Nguyễn Thị Minh Khai'],ans:0,exp:'Ba đại biểu dự Đại hội VII (7/1935): Lê Hồng Phong (được bầu vào BCH QTCS), Nguyễn Thị Minh Khai, Hoàng Văn Nọn.'},
-  {q:'Cuộc vận động dân chủ 1936–1939 có ý nghĩa gì với Cách mạng Tháng Tám?',opts:['Là bước chuẩn bị lực lượng cho thắng lợi 1945','Là cuộc cách mạng hoàn chỉnh','Đã giải phóng được Đông Dương','Không có liên hệ với 1945'],ans:0,exp:'BOX 56 khẳng định: "Cuộc vận động dân chủ 1936–1939 làm cho trận địa và lực lượng cách mạng được mở rộng, là bước chuẩn bị cho Cách mạng Tháng Tám."'},
-  {q:'Tờ báo bí mật nào được xuất bản tại nhà tù Hỏa Lò?',opts:['"Đuốc đưa đường" và "Con đường chính"','"Ý kiến chung" và "Giải phóng"','"Nhân dân" và "Cờ đỏ"','"Tranh đấu" và "Tiến lên"'],ans:0,exp:'Tại Hỏa Lò (Hà Nội) có hai tờ báo bí mật: "Đuốc đưa đường" và "Con đường chính" — phục vụ học tập và đấu tranh tư tưởng.'},
 ];
 
-// ============================================================
-// PERIODS
-// ============================================================
 const PERIODS=[
   {id:'all',label:'📚 Tất cả',prompt:'Bạn có thể trả lời mọi câu hỏi về giai đoạn 1929–1939.',welcome:'Chào mừng bạn đến **Trung tâm Thảo luận Lịch sử**!\nHỏi tôi bất cứ điều gì về giai đoạn **1929–1939** của lịch sử cách mạng Việt Nam!',quickPrompts:['Tóm tắt toàn bộ 1929–1939','Nhân vật quan trọng nhất?','Những bước ngoặt lớn?','So sánh giai đoạn 1930–31 và 1936–39']},
   {id:'khunghoang',label:'1929–1930',prompt:'Tập trung vào khủng hoảng kinh tế thế giới 1929–1933, Yên Bái, bãi công công nhân, biểu tình nông dân, cao trào 6–9/1930.',welcome:'## 1929–1930: Khủng hoảng & Bùng nổ\n- 🌍 Khủng hoảng kinh tế tư bản 1929–1933\n- ⚡ Pháp tăng cường bóc lột Đông Dương\n- 🏭 Bãi công liên tiếp (1–4/1930)\n- 🔥 121 cuộc đấu tranh (6–8/1930)',quickPrompts:['Khủng hoảng 1929 ảnh hưởng thế nào?','Phong trào công nhân 1930','Biểu tình Hưng Nguyên 12/9/1930','Xô viết Nghệ Tĩnh là gì?']},
@@ -380,9 +364,6 @@ const PERIODS=[
 
 const SYSTEM_BASE=`Bạn là chuyên gia lịch sử về Đảng Cộng sản Việt Nam giai đoạn 1929–1939. Trả lời chính xác theo sự kiện lịch sử, hoàn toàn bằng tiếng Việt, có cấu trúc rõ ràng. Dùng markdown: ## tiêu đề, **in đậm** cho sự kiện/mốc quan trọng, *in nghiêng* cho trích dẫn, > blockquote cho câu nói nổi tiếng. Cuối mỗi câu trả lời gợi mở 1–2 câu hỏi liên quan.`;
 
-// ============================================================
-// BOX DATA
-// ============================================================
 const BOXES_DATA=[
   {id:1,era:'1929–1930 · Bối cảnh Thế giới',content:'Trong thời gian 1929–1933, khi Liên Xô đang đạt được những thành quả quan trọng trong công cuộc xây dựng đất nước, thì ở các nước tư bản chủ nghĩa diễn ra một cuộc khủng hoảng kinh tế trên quy mô lớn, để lại những hậu quả nặng nề, làm cho những mâu thuẫn trong lòng xã hội tư bản phát triển gay gắt. Phong trào cách mạng thế giới dâng cao.'},
   {id:2,era:'1930 · Đông Dương',content:'Ở Đông Dương, thực dân Pháp tăng cường bóc lột để bù đắp những hậu quả của cuộc khủng hoảng kinh tế quốc, đồng thời tiến hành một chiến dịch khủng bố trắng nhằm đàn áp cuộc khởi nghĩa Yên Bái (2/1930). Mâu thuẫn giữa dân tộc Việt Nam với đế quốc Pháp và tay sai càng trở nên gay gắt.'},
@@ -449,12 +430,12 @@ const ctx = canvas.getContext('2d');
 const GROUND_Y=CH-56,WORLD_W=7200;
 const GRAVITY=0.55,JUMP_VY=-13.5,SPEED=4.2,GOAL_X=WORLD_W-320;
 
+// Reset mỗi lần tải trang — không giữ tiến trình cũ
+try{localStorage.removeItem('spst_done');localStorage.removeItem('spst_score');}catch(e){}
 let completed=new Set();
-try{const s=localStorage.getItem('spst_done');if(s)completed=new Set(JSON.parse(s));}catch(e){}
-let paused=false,activeBoxId=null,goalUnlocked=completed.size>=56,chatHistory=[];
+let paused=false,activeBoxId=null,goalUnlocked=false,chatHistory=[];
 let activePeriod='all',chatCloseCooldown=0;
 let score=0;
-try{const s=localStorage.getItem('spst_score');if(s)score=parseInt(s)||0;}catch(e){}
 
 const fireworks=[];
 const GROUND={x:0,y:GROUND_Y,w:WORLD_W,h:56};
@@ -481,15 +462,28 @@ const P={x:60,y:GROUND_Y-44,w:32,h:44,vx:0,vy:0,onGround:false,right:true,af:0,a
 let camX=0;
 const keys={};
 
+// ============================================================
+// BACKGROUND TITLE — scrolling text config
+// ============================================================
+const BG_TITLE_LINE1 = 'ĐẢNG CỘNG SẢN VIỆT NAM RA ĐỜI';
+const BG_TITLE_LINE2 = 'VÀ LÃNH ĐẠO ĐẤU TRANH GIÀNH CHÍNH QUYỀN';
+const BG_TITLE_LINE3 = '(1930 – 1945)';
+
+function isTypingFocused(){
+  const t=document.activeElement;
+  return t&&(t.tagName==='INPUT'||t.tagName==='TEXTAREA'||t.isContentEditable);
+}
+
 window.addEventListener('keydown',e=>{
+  if(isTypingFocused())return; // ← chặn di chuyển nhân vật khi đang gõ
   keys[e.code]=true;
   if(['Space','ArrowUp','ArrowDown','ArrowLeft','ArrowRight'].includes(e.code))e.preventDefault();
   if(e.code==='Enter'&&document.getElementById('modal').classList.contains('show'))closeBox();
-  if(document.getElementById('chatOverlay').classList.contains('show')){
-    if(['ArrowLeft','ArrowRight','KeyA','KeyD'].includes(e.code))closeChat();
-  }
 });
-window.addEventListener('keyup',e=>{keys[e.code]=false;});
+window.addEventListener('keyup',e=>{
+  if(isTypingFocused())return;
+  keys[e.code]=false;
+});
 
 function addScore(pts,wx,wy){
   score+=pts;
@@ -551,21 +545,108 @@ function drawBackground(){
   const g=ctx.createLinearGradient(0,0,0,CH*.75);
   g.addColorStop(0,'#0f0000');g.addColorStop(.4,'#4a0000');g.addColorStop(1,'#780000');
   ctx.fillStyle=g;ctx.fillRect(0,0,CW,CH);
+
+  // Stars
   for(const s of bgStars){
     const f=.55+.45*Math.sin(s.t+bgTick*.025);
     ctx.fillStyle=`rgba(255,220,160,${f*.85})`;
     ctx.beginPath();ctx.arc(s.x,s.y,s.r,0,Math.PI*2);ctx.fill();
   }
+
+  // Watermark hammer-sickle
   ctx.save();ctx.globalAlpha=.035;ctx.fillStyle='#FFD700';
   ctx.font='bold 200px serif';ctx.textAlign='center';
   for(let i=0;i<3;i++){const hx=((i*700-camX*.04)%(CW+600)+CW+600)%(CW+600)-100;ctx.fillText('☭',hx,CH*.58);}
   ctx.globalAlpha=1;ctx.textAlign='left';ctx.restore();
+
+  // Flags
   for(let i=0;i<7;i++){const fx=((i*280-camX*.07)%(CW+300)+CW+300)%(CW+300)-80;drawFlag(fx,30+i%3*8,bgTick);}
+
+  // Mountains
   ctx.fillStyle='rgba(70,0,0,.5)';
   for(let i=0;i<9;i++){const mx=((i*210-camX*.11)%(CW+300)+CW+300)%(CW+300)-80;ctx.beginPath();ctx.moveTo(mx,CH);ctx.lineTo(mx+105,CH-155);ctx.lineTo(mx+210,CH);ctx.fill();}
   ctx.fillStyle='rgba(35,0,0,.65)';
   for(let i=0;i<7;i++){const mx=((i*260+90-camX*.17)%(CW+300)+CW+300)%(CW+300)-80;ctx.beginPath();ctx.moveTo(mx,CH);ctx.lineTo(mx+130,CH-105);ctx.lineTo(mx+260,CH);ctx.fill();}
+
+  // ============================================================
+  // TITLE BANNER — centered, fixed on screen (không cuộn)
+  // ============================================================
+  drawBgTitle();
 }
+
+function drawBgTitle(){
+  const centerX = CW / 2;
+  const baseY = 88; // vertical position
+
+  // Glow pulse
+  const glow = 0.55 + 0.45 * Math.sin(bgTick * 0.04);
+
+  // === Decorative top border line ===
+  ctx.save();
+  ctx.globalAlpha = 0.22 * glow;
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 1;
+  const lineW = 520;
+  ctx.beginPath();
+  ctx.moveTo(centerX - lineW/2, baseY - 38);
+  ctx.lineTo(centerX + lineW/2, baseY - 38);
+  ctx.stroke();
+  // Star decorations on line
+  ctx.globalAlpha = 0.35 * glow;
+  ctx.fillStyle = '#FFD700';
+  ctx.font = '10px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('★', centerX - lineW/2 + 8, baseY - 34);
+  ctx.fillText('★', centerX + lineW/2 - 8, baseY - 34);
+  ctx.restore();
+
+  // === LINE 1: Main title ===
+  ctx.save();
+  ctx.textAlign = 'center';
+  ctx.globalAlpha = (0.45 + 0.18 * glow);
+
+  // Shadow/glow layer
+  ctx.shadowBlur = 18;
+  ctx.shadowColor = '#FFD700';
+  ctx.fillStyle = '#FFD700';
+  ctx.font = 'bold 17px "Be Vietnam Pro", sans-serif';
+  ctx.letterSpacing = '1px';
+  ctx.fillText(BG_TITLE_LINE1, centerX, baseY - 14);
+
+  // === LINE 2 ===
+  ctx.font = 'bold 14px "Be Vietnam Pro", sans-serif';
+  ctx.shadowBlur = 12;
+  ctx.fillText(BG_TITLE_LINE2, centerX, baseY + 8);
+
+  // === LINE 3: year range ===
+  ctx.shadowBlur = 8;
+  ctx.shadowColor = '#ff8800';
+  ctx.fillStyle = '#ffcc44';
+  ctx.font = 'bold 13px "Press Start 2P", monospace';
+  ctx.fillText(BG_TITLE_LINE3, centerX, baseY + 30);
+
+  ctx.shadowBlur = 0;
+  ctx.globalAlpha = 1;
+  ctx.restore();
+
+  // === Decorative bottom border line ===
+  ctx.save();
+  ctx.globalAlpha = 0.22 * glow;
+  ctx.strokeStyle = '#FFD700';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(centerX - lineW/2, baseY + 42);
+  ctx.lineTo(centerX + lineW/2, baseY + 42);
+  ctx.stroke();
+  ctx.globalAlpha = 0.35 * glow;
+  ctx.fillStyle = '#FFD700';
+  ctx.font = '10px serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('★', centerX - lineW/2 + 8, baseY + 46);
+  ctx.fillText('★', centerX + lineW/2 - 8, baseY + 46);
+  ctx.restore();
+}
+
 function drawFlag(fx,fy,t){
   const FW=40,FH=28;
   ctx.fillStyle='#aa6600';ctx.fillRect(fx,fy,2,FH+20);
@@ -794,6 +875,53 @@ function doRestart(){
 }
 document.getElementById('btnRestart').onclick=doRestart;
 
+// ============================================================
+// CHEAT CODE
+// ============================================================
+function activateCheat(){
+  const inp=document.getElementById('cheatInput');
+  const msg=document.getElementById('cheatMsg');
+  const code=inp.value.trim().toUpperCase();
+  if(code==='VNR202'){
+    inp.value='';
+    // Unlock all boxes
+    for(const b of MBOXES)b.done=true;
+    completed=new Set(BOXES_DATA.map(d=>d.id));
+    try{localStorage.setItem('spst_done',JSON.stringify([...completed]));}catch(e){}
+    // Add bonus score
+    score+=560;
+    try{localStorage.setItem('spst_score',score);}catch(e){}
+    document.getElementById('scoreDisplay').textContent=score;
+    updateHUD();
+    goalUnlocked=true;
+    // Fireworks!
+    spawnFireworks();spawnFireworks();
+    setTimeout(spawnFireworks,500);
+    setTimeout(spawnFireworks,1000);
+    // Show victory after short delay
+    setTimeout(()=>{
+      paused=true;
+      document.getElementById('victoryScore').textContent=score;
+      document.getElementById('victoryOverlay').classList.add('show');
+    },1600);
+    // Flash success message
+    msg.textContent='✓ THẮNG RỒI!';
+    msg.style.color='#00ff88';
+    msg.style.display='';
+    setTimeout(()=>{msg.style.display='none';},3000);
+  } else {
+    msg.textContent='✗ SAI CODE';
+    msg.style.color='#ff5555';
+    msg.style.display='';
+    inp.value='';
+    setTimeout(()=>{msg.style.display='none';},2000);
+  }
+}
+document.getElementById('cheatBtn').onclick=activateCheat;
+document.getElementById('cheatInput').addEventListener('keydown',e=>{
+  if(e.key==='Enter'){e.preventDefault();activateCheat();}
+});
+
 let lastT=0;
 function loop(ts){
   const dt=Math.min((ts-lastT)/16.67,3);lastT=ts;
@@ -911,9 +1039,7 @@ function renderQuizResult(){
 
 document.getElementById('btnOpenChat').onclick=()=>{document.getElementById('victoryOverlay').classList.remove('show');openChatArea();};
 
-// ============================================================
-// CHAT — gọi qua /api/chat proxy, KHÔNG dùng API key trực tiếp
-// ============================================================
+// CHAT
 function openChatArea(){
   if(document.getElementById('chatOverlay').classList.contains('show'))return;
   paused=true;
@@ -986,8 +1112,6 @@ async function sendChat(){
 
   try{
     const sysPrompt=`${SYSTEM_BASE}\nGiai đoạn đang thảo luận: ${period.label}.\n${period.prompt}`;
-
-    // ✅ Gọi qua Vercel serverless proxy — API key an toàn trên server
     const res=await fetch('/api/chat',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
